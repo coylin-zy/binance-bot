@@ -5,15 +5,16 @@ import { AlertTriangle, Bot, CheckCircle2, CirclePause, CirclePlay, LockKeyhole,
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PanelError, PanelLoading } from "@/components/dashboard/data-state";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { postApi } from "@/lib/api";
 import { useBotStatus } from "@/hooks/use-bot-status";
 
 type BotAction = "pause" | "stop" | "start";
 
-const actionCopy: Record<BotAction, { title: string; description: string }> = {
-  pause: { title: "暂停新开仓", description: "机器人将保留现有持仓，但暂停创建新交易。" },
-  stop: { title: "停止机器人", description: "机器人将停止交易循环。该操作不会强制平仓，但需要人工再次启动。" },
-  start: { title: "启动机器人", description: "机器人将恢复策略扫描与自动交易循环。" },
+const actionCopy: Record<BotAction, { title: string; description: string; confirmLabel: string; target: string; variant: "default" | "destructive" | "outline" }> = {
+  pause: { title: "暂停新开仓", description: "机器人将保留现有持仓，但暂停创建新交易。", confirmLabel: "确认暂停", target: "PAUSED", variant: "outline" },
+  stop: { title: "停止机器人", description: "机器人将停止交易循环。该操作不会强制平仓，但需要人工再次启动。", confirmLabel: "确认停止", target: "STOPPED", variant: "destructive" },
+  start: { title: "启动机器人", description: "机器人将恢复策略扫描与自动交易循环。", confirmLabel: "确认启动", target: "RUNNING", variant: "default" },
 };
 
 export default function SettingsPage() {
@@ -37,7 +38,6 @@ export default function SettingsPage() {
   }), [config]);
 
   async function sendAction(action: BotAction) {
-    setPending(null);
     setLoading(action);
     setMessage(null);
     try {
@@ -48,6 +48,7 @@ export default function SettingsPage() {
       setMessage({ tone: "error", text: actionError instanceof Error ? actionError.message : "操作失败，请稍后重试。" });
     } finally {
       setLoading(null);
+      setPending(null);
     }
   }
 
@@ -84,9 +85,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {state === "RUNNING" && <><Button variant="outline" onClick={() => sendAction("pause")} disabled={!!loading}><CirclePause size={16} />{loading === "pause" ? "正在发送" : "暂停新开仓"}</Button><Button variant="destructive" onClick={() => setPending("stop")} disabled={!!loading}><Octagon size={16} />停止机器人</Button></>}
-                {state === "PAUSED" && <><Button onClick={() => sendAction("start")} disabled={!!loading}><CirclePlay size={16} />{loading === "start" ? "正在发送" : "恢复运行"}</Button><Button variant="destructive" onClick={() => setPending("stop")} disabled={!!loading}><Octagon size={16} />停止机器人</Button></>}
-                {state === "STOPPED" && <Button className="sm:col-span-2" onClick={() => sendAction("start")} disabled={!!loading}><CirclePlay size={16} />{loading === "start" ? "正在发送" : "启动机器人"}</Button>}
+                {state === "RUNNING" && <><Button variant="outline" onClick={() => setPending("pause")} disabled={!!loading}><CirclePause size={16} />暂停新开仓</Button><Button variant="destructive" onClick={() => setPending("stop")} disabled={!!loading}><Octagon size={16} />停止机器人</Button></>}
+                {state === "PAUSED" && <><Button onClick={() => setPending("start")} disabled={!!loading}><CirclePlay size={16} />恢复运行</Button><Button variant="destructive" onClick={() => setPending("stop")} disabled={!!loading}><Octagon size={16} />停止机器人</Button></>}
+                {state === "STOPPED" && <Button className="sm:col-span-2" onClick={() => setPending("start")} disabled={!!loading}><CirclePlay size={16} />启动机器人</Button>}
                 {!["RUNNING", "PAUSED", "STOPPED"].includes(state) && <div className="sm:col-span-2 border border-[rgba(255,180,171,0.28)] p-4 text-xs text-[var(--danger)]">未知机器人状态，控制按钮已禁用。</div>}
               </div>
             </div>
@@ -108,14 +109,22 @@ export default function SettingsPage() {
       </div>
 
       {pending && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-          <div className="w-full max-w-md border border-[var(--danger-strong)] bg-[var(--surface-low)] p-6 shadow-2xl">
-            <AlertTriangle size={24} className="text-[var(--danger)]" />
-            <h2 id="confirm-title" className="font-display mt-5 text-lg font-bold">确认{actionCopy[pending].title}？</h2>
-            <p className="mt-3 text-xs leading-6 text-[var(--text-soft)]">{actionCopy[pending].description}</p>
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => setPending(null)}>取消</Button><Button variant="destructive" onClick={() => sendAction(pending)}>确认停止</Button></div>
+        <ConfirmationDialog
+          title={`确认${actionCopy[pending].title}？`}
+          description={actionCopy[pending].description}
+          confirmLabel={actionCopy[pending].confirmLabel}
+          confirmVariant={actionCopy[pending].variant}
+          busy={loading === pending}
+          onCancel={() => setPending(null)}
+          onConfirm={() => void sendAction(pending)}
+        >
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border border-[var(--line-soft)] bg-[var(--surface-dim)] p-4 text-center">
+            <div><div className="terminal-label text-[0.54rem]">Current</div><div className="terminal-value mt-1 text-xs font-bold">{state}</div></div>
+            <span className="text-[var(--muted)]">→</span>
+            <div><div className="terminal-label text-[0.54rem]">Target</div><div className="terminal-value mt-1 text-xs font-bold text-[var(--terminal)]">{actionCopy[pending].target}</div></div>
           </div>
-        </div>
+          {!config?.dry_run ? <p className="mt-3 border-l-2 border-[var(--danger-strong)] pl-3 text-[0.66rem] leading-5 text-[var(--danger)]">当前为实盘模式，确认后会直接改变自动交易循环状态。</p> : null}
+        </ConfirmationDialog>
       )}
     </div>
   );

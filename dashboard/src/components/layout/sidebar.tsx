@@ -25,7 +25,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden min-h-screen w-[304px] shrink-0 border-r border-[var(--line-soft)] bg-[var(--surface-dim)] md:flex md:flex-col">
+      <aside className="hidden min-h-screen w-[276px] shrink-0 border-r border-[var(--line-soft)] bg-[var(--surface-dim)] md:flex md:flex-col">
         <div className="border-b border-[var(--line-soft)] px-6 py-7">
           <Link href="/" className="group flex items-center gap-3" aria-label="Neural Terminal 首页">
             <span className="grid h-10 w-10 place-items-center border border-[var(--terminal)] text-[var(--terminal)] shadow-[0_0_18px_rgba(0,255,65,0.12)]">

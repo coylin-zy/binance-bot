@@ -83,7 +83,7 @@ button, a, input, select { -webkit-tap-highlight-color: transparent; }
   inset: 0;
   z-index: 90;
   pointer-events: none;
-  opacity: 0.16;
+  opacity: 0.1;
   background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.28) 3px 4px);
   mix-blend-mode: multiply;
 }
@@ -162,6 +162,17 @@ button, a, input, select { -webkit-tap-highlight-color: transparent; }
 }
 
 @keyframes terminal-scan { to { transform: translateX(100%); } }
+
+.terminal-dialog-backdrop { animation: dialog-fade 140ms ease-out; }
+.terminal-dialog { animation: dialog-rise 180ms ease-out; }
+
+@keyframes dialog-fade {
+  from { opacity: 0; }
+}
+
+@keyframes dialog-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

@@ -26,3 +26,15 @@ export function profitClass(value: number | undefined | null): string {
   if (value === undefined || value === null || value === 0) return "";
   return value > 0 ? "profit-pos" : "profit-neg";
 }
+
+export function positionRiskDistance(
+  currentRate: number | undefined | null,
+  stopLossRate: number | undefined | null,
+  isShort: boolean,
+): number | null {
+  if (!currentRate || !stopLossRate || currentRate <= 0 || stopLossRate <= 0) return null;
+  const distance = isShort
+    ? (stopLossRate - currentRate) / currentRate
+    : (currentRate - stopLossRate) / currentRate;
+  return Number.isFinite(distance) ? distance : null;
+}
