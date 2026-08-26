@@ -1,0 +1,15 @@
+services:
+  web-ui:
+    build: .
+    restart: unless-stopped
+    container_name: ft-dashboard
+    environment:
+      - FREQTRADE_URL=http://freqtrade:8080
+      - FREQTRADE_WS_TOKEN=${FREQTRADE_WS_TOKEN}
+    networks:
+      - ft-network
+
+networks:
+  ft-network:
+    external: true
+    name: freqtrade_default
