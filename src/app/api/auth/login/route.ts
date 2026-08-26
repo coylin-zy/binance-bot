@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { login } from "@/lib/freqtrade/client";
+import { FreqtradeApiError, login } from "@/lib/freqtrade/client";
 import { setSession } from "@/lib/auth";
 import { checkRateLimit, recordFailedAttempt, resetAttempts } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
+  const ip = req.headers.get("x-real-ip")?.trim() || forwardedFor || "unknown";
 
   const rate = checkRateLimit(ip);
   if (!rate.allowed) {
@@ -13,10 +14,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const username = body.username as string;
-    const password = body.password as string;
-    if (!username || !password) {
+    const body = await req.json().catch(() => null) as { username?: unknown; password?: unknown } | null;
+    const username = typeof body?.username === "string" ? body.username.trim() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!username || !password || username.length > 256 || password.length > 512) {
       return NextResponse.json({ error: "Username and password required" }, { status: 400 });
     }
 
@@ -24,8 +25,11 @@ export async function POST(req: NextRequest) {
     await setSession(tokens, username);
     resetAttempts(ip);
     return NextResponse.json({ ok: true });
-  } catch {
-    recordFailedAttempt(ip);
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof FreqtradeApiError && error.status === 401) {
+      recordFailedAttempt(ip);
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Freqtrade service unavailable" }, { status: 503 });
   }
 }

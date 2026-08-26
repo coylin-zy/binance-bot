@@ -11,13 +11,13 @@ const rateMap = new Map<string, RateEntry>();
 export function checkRateLimit(ip: string): { allowed: boolean; remainingLockMs?: number } {
   const entry = rateMap.get(ip);
   if (!entry) return { allowed: true };
-  if (Date.now() < entry.lockedUntil) {
-    return { allowed: false, remainingLockMs: entry.lockedUntil - Date.now() };
+  const now = Date.now();
+  if (now < entry.lockedUntil) {
+    return { allowed: false, remainingLockMs: entry.lockedUntil - now };
   }
-  if (entry.attempts >= MAX_ATTEMPTS) {
-    entry.lockedUntil = Date.now() + LOCK_DURATION_MS;
-    rateMap.set(ip, entry);
-    return { allowed: false, remainingLockMs: LOCK_DURATION_MS };
+  if (entry.lockedUntil > 0 && now >= entry.lockedUntil) {
+    rateMap.delete(ip);
+    return { allowed: true };
   }
   return { allowed: true };
 }

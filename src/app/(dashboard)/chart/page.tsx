@@ -11,6 +11,7 @@ import {
   type Time,
 } from "lightweight-charts";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useRealtime } from "@/hooks/use-realtime";
 import { apiFetcher, postApi } from "@/lib/api";
 import { tradeRows } from "@/lib/freqtrade/normalizers";
 import type { PairCandleData, ShowConfig, TradeHistoryResponse, Whitelist } from "@/lib/freqtrade/types";
@@ -30,26 +31,22 @@ export default function ChartPage() {
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ReturnType<IChartApi["addCandlestickSeries"]> | null>(null);
   const [pair, setPair] = useState("BTC/USDT");
-  const [timeframe, setTimeframe] = useState("5m");
   const [latest, setLatest] = useState<CandleRow | null>(null);
   const [chartError, setChartError] = useState<string | null>(null);
   const [chartLoading, setChartLoading] = useState(true);
+  const { lastCandleAt } = useRealtime();
 
   const whitelist = useSWR<Whitelist>("/api/ft/whitelist", apiFetcher);
   const trades = useSWR<TradeHistoryResponse>("/api/ft/trades?limit=500", apiFetcher, { refreshInterval: 30_000 });
   const config = useSWR<ShowConfig>("/api/ft/show_config", apiFetcher, { refreshInterval: 30_000 });
   const pairs = whitelist.data?.whitelist?.length ? whitelist.data.whitelist : ["BTC/USDT"];
-  const configuredTimeframe = config.data?.timeframe ?? "5m";
+  const timeframe = config.data?.timeframe ?? "5m";
 
   useEffect(() => {
     if (whitelist.data?.whitelist?.length && !whitelist.data.whitelist.includes(pair)) {
       setPair(whitelist.data.whitelist[0]);
     }
   }, [pair, whitelist.data]);
-
-  useEffect(() => {
-    setTimeframe(configuredTimeframe);
-  }, [configuredTimeframe]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -112,7 +109,7 @@ export default function ChartPage() {
     }
     loadCandles();
     return () => { cancelled = true; };
-  }, [pair, timeframe]);
+  }, [lastCandleAt, pair, timeframe]);
 
   const pairTrades = useMemo(() => tradeRows(trades.data).filter((trade) => trade.pair === pair), [pair, trades.data]);
 

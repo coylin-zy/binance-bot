@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, setTokenCookies } from "@/lib/auth";
+import { FreqtradeApiError, ftFetch } from "@/lib/freqtrade/client";
 import { realtimeManager } from "@/lib/freqtrade/realtime-manager";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,16 @@ export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  try {
+    const validation = await ftFetch("show_config", { tokens: session });
+    if (validation.refreshedTokens) await setTokenCookies(validation.refreshedTokens);
+  } catch (error) {
+    if (error instanceof FreqtradeApiError && error.status === 401) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return new Response("Freqtrade service unavailable", { status: 503 });
   }
 
   const encoder = new TextEncoder();

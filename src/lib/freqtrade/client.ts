@@ -1,6 +1,11 @@
 const FT_BASE_URL =
   process.env.FREQTRADE_URL ?? "http://freqtrade:8080";
 
+const configuredTimeout = Number(process.env.FREQTRADE_TIMEOUT_MS ?? 10_000);
+const FT_TIMEOUT_MS = Number.isFinite(configuredTimeout)
+  ? Math.min(Math.max(configuredTimeout, 1_000), 30_000)
+  : 10_000;
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -23,8 +28,24 @@ export class FreqtradeApiError extends Error {
   }
 }
 
+async function ftRequest(url: string, init: RequestInit = {}) {
+  try {
+    return await fetch(url, {
+      ...init,
+      cache: "no-store",
+      signal: AbortSignal.timeout(FT_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new FreqtradeApiError(504, "Freqtrade request timed out");
+    }
+    throw new FreqtradeApiError(502, "Freqtrade service unavailable");
+  }
+}
+
 async function fetchTokens(username: string, password: string): Promise<TokenPair> {
-  const res = await fetch(`${FT_BASE_URL}/api/v1/token/login`, {
+  const res = await ftRequest(`${FT_BASE_URL}/api/v1/token/login`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
@@ -36,7 +57,7 @@ async function fetchTokens(username: string, password: string): Promise<TokenPai
 }
 
 async function refreshTokens(refresh: string): Promise<TokenPair> {
-  const res = await fetch(`${FT_BASE_URL}/api/v1/token/refresh`, {
+  const res = await ftRequest(`${FT_BASE_URL}/api/v1/token/refresh`, {
     method: "POST",
     headers: { Authorization: `Bearer ${refresh}` },
   });
@@ -67,7 +88,7 @@ export async function ftFetch<T>(
     activeTokens = refreshedTokens;
   }
 
-  let res = await fetch(`${FT_BASE_URL}/api/v1/${path}`, {
+  let res = await ftRequest(`${FT_BASE_URL}/api/v1/${path}`, {
     method: options.method ?? "GET",
     headers: {
       Authorization: `Bearer ${activeTokens.accessToken}`,
@@ -79,7 +100,7 @@ export async function ftFetch<T>(
   if (res.status === 401) {
     const refreshed = await refreshTokens(activeTokens.refreshToken);
     refreshedTokens = refreshed;
-    res = await fetch(`${FT_BASE_URL}/api/v1/${path}`, {
+    res = await ftRequest(`${FT_BASE_URL}/api/v1/${path}`, {
       method: options.method ?? "GET",
       headers: {
         Authorization: `Bearer ${refreshed.accessToken}`,

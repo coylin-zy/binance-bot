@@ -13,7 +13,6 @@ class RealtimeManager {
   private ws: WebSocket | null = null;
   private subscribers = new Set<Subscriber>();
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private _connected = false;
 
@@ -26,6 +25,16 @@ class RealtimeManager {
     this.ensureConnected();
     return () => {
       this.subscribers.delete(fn);
+      if (this.subscribers.size === 0) {
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        const socket = this.ws;
+        this.ws = null;
+        if (socket && socket.readyState !== WebSocket.CLOSED) socket.close();
+      }
     };
   }
 
@@ -40,11 +49,15 @@ class RealtimeManager {
   }
 
   ensureConnected() {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
     if (this.reconnectTimer) return;
 
     const wsToken = process.env.FREQTRADE_WS_TOKEN;
     const ftUrl = process.env.FREQTRADE_URL ?? "http://freqtrade:8080";
+    if (!wsToken) {
+      this.broadcast("_connection", { connected: false });
+      return;
+    }
     const wsUrl = ftUrl.replace(/^http/, "ws") + `/api/v1/message/ws?token=${wsToken}`;
 
     try {
@@ -71,6 +84,7 @@ class RealtimeManager {
     });
 
     this.ws.on("close", () => {
+      this.ws = null;
       this._connected = false;
       this.broadcast("_connection", { connected: false });
       this.scheduleReconnect();
@@ -78,13 +92,13 @@ class RealtimeManager {
 
     this.ws.on("error", () => {
       this._connected = false;
+      this.ws?.terminate();
     });
   }
 
   private scheduleReconnect() {
     if (this.reconnectTimer) return;
     if (this.subscribers.size === 0) return;
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
 
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts += 1;

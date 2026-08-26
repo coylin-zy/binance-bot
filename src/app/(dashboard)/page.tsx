@@ -5,6 +5,7 @@ import { Activity, ArrowRight, CircleDollarSign, LockKeyhole, Radar, ShieldCheck
 import useSWR from "swr";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PanelError, PanelLoading } from "@/components/dashboard/data-state";
+import { RealtimeActivityPanel } from "@/components/dashboard/realtime-activity";
 import { TradeCard } from "@/components/dashboard/trade-card";
 import { apiFetcher } from "@/lib/api";
 import { latestPeriod } from "@/lib/freqtrade/normalizers";
@@ -126,32 +127,35 @@ export default function DashboardPage() {
               )}
             </section>
 
-            <aside className="terminal-panel overflow-hidden" aria-label="系统状态">
-              <div className="border-b border-[var(--line-soft)] px-5 py-4">
-                <div className="terminal-label text-[var(--terminal)]">System telemetry</div>
-                <h2 className="mt-1 font-display text-sm font-bold">运行状态</h2>
-              </div>
-              <div className="divide-y divide-[var(--line-soft)] px-5">
-                {[
-                  { icon: Activity, label: "BOT STATE", value: state, color: stateColor },
-                  { icon: CircleDollarSign, label: "EXECUTION MODE", value: config.data?.dry_run ? "DRY-RUN / SPOT" : "LIVE / CHECK", color: config.data?.dry_run ? "var(--warning)" : "var(--danger)" },
-                  { icon: Radar, label: "STRATEGY", value: config.data?.strategy ?? "--", color: "var(--text)" },
-                  { icon: ShieldCheck, label: "TIMEFRAME", value: config.data?.timeframe ?? "--", color: "var(--text)" },
-                  { icon: LockKeyhole, label: "MANUAL TRADING", value: "SERVER BLOCKED", color: "var(--terminal)" },
-                ].map((item) => (
-                  <div key={item.label} className="flex gap-3 py-4">
-                    <item.icon size={16} strokeWidth={1.5} className="mt-0.5 shrink-0 text-[var(--muted)]" />
-                    <div className="min-w-0">
-                      <div className="terminal-label text-[0.56rem]">{item.label}</div>
-                      <div className="mt-1 truncate text-[0.7rem] font-bold" style={{ color: item.color }}>{item.value}</div>
+            <div className="space-y-5">
+              <aside className="terminal-panel overflow-hidden" aria-label="系统状态">
+                <div className="border-b border-[var(--line-soft)] px-5 py-4">
+                  <div className="terminal-label text-[var(--terminal)]">System telemetry</div>
+                  <h2 className="mt-1 font-display text-sm font-bold">运行状态</h2>
+                </div>
+                <div className="divide-y divide-[var(--line-soft)] px-5">
+                  {[
+                    { icon: Activity, label: "BOT STATE", value: state, color: stateColor },
+                    { icon: CircleDollarSign, label: "EXECUTION MODE", value: config.data?.dry_run ? "DRY-RUN / SPOT" : "LIVE / CHECK", color: config.data?.dry_run ? "var(--warning)" : "var(--danger)" },
+                    { icon: Radar, label: "STRATEGY", value: config.data?.strategy ?? "--", color: "var(--text)" },
+                    { icon: ShieldCheck, label: "TIMEFRAME", value: config.data?.timeframe ?? "--", color: "var(--text)" },
+                    { icon: LockKeyhole, label: "MANUAL TRADING", value: "SERVER BLOCKED", color: "var(--terminal)" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex gap-3 py-4">
+                      <item.icon size={16} strokeWidth={1.5} className="mt-0.5 shrink-0 text-[var(--muted)]" />
+                      <div className="min-w-0">
+                        <div className="terminal-label text-[0.56rem]">{item.label}</div>
+                        <div className="mt-1 truncate text-[0.7rem] font-bold" style={{ color: item.color }}>{item.value}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <Link href="/settings" className="flex min-h-12 items-center justify-between border-t border-[var(--line-soft)] px-5 text-[0.68rem] font-bold text-[var(--text-soft)] hover:bg-[var(--surface-high)] hover:text-[var(--terminal)]">
-                进入运行控制 <ArrowRight size={15} />
-              </Link>
-            </aside>
+                  ))}
+                </div>
+                <Link href="/settings" className="flex min-h-12 items-center justify-between border-t border-[var(--line-soft)] px-5 text-[0.68rem] font-bold text-[var(--text-soft)] hover:bg-[var(--surface-high)] hover:text-[var(--terminal)]">
+                  进入运行控制 <ArrowRight size={15} />
+                </Link>
+              </aside>
+              <RealtimeActivityPanel />
+            </div>
           </div>
         </>
       )}

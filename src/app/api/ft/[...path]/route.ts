@@ -42,7 +42,8 @@ async function handle(req: NextRequest, params: Params["params"]) {
     if (err instanceof FreqtradeApiError && err.status === 401) {
       return NextResponse.json({ error: "Session expired" }, { status: 401 });
     }
-    return NextResponse.json({ error: "Freqtrade service unavailable" }, { status: 502 });
+    const status = err instanceof FreqtradeApiError && err.status === 504 ? 504 : 502;
+    return NextResponse.json({ error: "Freqtrade service unavailable" }, { status });
   }
 }
 

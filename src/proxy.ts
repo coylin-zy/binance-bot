@@ -6,15 +6,22 @@ function securityHeaders() {
   const scriptPolicy = process.env.NODE_ENV === "development"
     ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
     : "script-src 'self' 'unsafe-inline'";
+  const connectPolicy = process.env.NODE_ENV === "development"
+    ? "connect-src 'self' ws: wss:"
+    : "connect-src 'self'";
 
   return [
     "default-src 'self'",
     scriptPolicy,
+    "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    "connect-src 'self' ws: wss:",
+    connectPolicy,
     "font-src 'self' data:",
     "object-src 'none'",
+    "frame-src 'none'",
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
@@ -36,8 +43,13 @@ export function proxy(req: NextRequest) {
   }
 
   response.headers.set("Content-Security-Policy", securityHeaders());
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Permitted-Cross-Domain-Policies", "none");
   return response;
 }
 

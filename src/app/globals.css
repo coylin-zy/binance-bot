@@ -45,6 +45,23 @@ body {
 button, input, select { font: inherit; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 120;
+  transform: translateY(-180%);
+  border: 1px solid var(--terminal);
+  background: var(--surface-dim);
+  color: var(--terminal);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus { transform: translateY(0); }
+
 :where(a, button, input, select):focus-visible {
   outline: 2px solid var(--terminal);
   outline-offset: 3px;

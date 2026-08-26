@@ -3,13 +3,11 @@
 import { LogOut, Radio, SquareTerminal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useRealtime } from "@/hooks/use-realtime";
 
-interface TopbarProps {
-  connected: boolean | null;
-}
-
-export function Topbar({ connected }: TopbarProps) {
+export function Topbar() {
   const router = useRouter();
+  const { connected, lastEventAt } = useRealtime();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -38,7 +36,10 @@ export function Topbar({ connected }: TopbarProps) {
           <span className="terminal-label text-[0.62rem]" style={{ color: stateColor }}>{stateLabel}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-[0.62rem] text-[var(--muted)] lg:inline">ENCRYPTED SESSION</span>
+          <span className="hidden text-[0.62rem] text-[var(--muted)] xl:inline">
+            {lastEventAt ? `LAST EVENT ${new Date(lastEventAt).toLocaleTimeString("zh-CN", { hour12: false })}` : "WAITING FOR EVENTS"}
+          </span>
+          <span className="hidden text-[0.62rem] text-[var(--muted)] lg:inline">HTTPONLY SESSION</span>
           <Button variant="ghost" size="sm" onClick={handleLogout} aria-label="退出登录">
             <LogOut size={15} />
             <span className="hidden sm:inline">退出</span>
