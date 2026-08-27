@@ -28,7 +28,7 @@ jobs:
 
       - name: Validate templates and strategy syntax
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           import json
           from pathlib import Path
 
@@ -53,7 +53,7 @@ jobs:
       - name: Reject tracked runtime secrets and state
         shell: bash
         run: |
-          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|config\.us\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
+          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|config\.us\.json|config\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
           if [[ -n "$forbidden" ]]; then
             echo "Tracked runtime files are forbidden:"
             echo "$forbidden"
@@ -63,8 +63,12 @@ jobs:
       - name: Validate Compose files
         env:
           FREQTRADE_WS_TOKEN: ci-placeholder-token
+        shell: bash
         run: |
-          docker compose config >/dev/null
+          root_compose="$(docker compose config)"
+          grep -F -- "/freqtrade/user_data/config.us.json" <<<"$root_compose" >/dev/null
+          grep -F -- "SimpleSpot" <<<"$root_compose" >/dev/null
+
           docker compose \
             -f dashboard/docker-compose.yml \
             -f dashboard/docker-compose.override.yml \
