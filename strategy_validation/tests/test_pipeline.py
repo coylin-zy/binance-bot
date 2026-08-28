@@ -45,7 +45,7 @@ class StrategyValidationTests(unittest.TestCase):
                     "wins": 2,
                     "draws": 0,
                     "losses": 1,
-                    "profit_total_pct": 1.5,
+                    "profit_total": 0.015,
                     "profit_factor": 1.2,
                     "max_drawdown_account": 0.03,
                     "sharpe": 0.7,

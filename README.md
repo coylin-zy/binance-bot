@@ -87,6 +87,9 @@ The repository-safety job also rejects changes that replace the fixed whitelist 
 `StaticPairList`, so the configured trading universe cannot drift silently.
 The separate strategy-validation workflow verifies an immutable candle-data lock,
 three fee-aware market windows, lookahead bias, and recursive indicator stability.
+The current measured result is recorded in
+[strategy_validation/BASELINE.md](strategy_validation/BASELINE.md); the sealed
+holdout is negative, so the strategy is not approved for real-money trading.
 
 ```bash
 FREQTRADE_WS_TOKEN=local-check docker compose config

@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "bytes": 560488,
+      "path": "data/development_2024_q1/BTC_USDT-5m.json.gz",
+      "sha256": "4aed1c3d2fa77e609a15d392c4d5c369527edb6f408efda27fa611f8f14ac199"
+    },
+    {
+      "bytes": 508514,
+      "path": "data/development_2024_q1/ETH_USDT-5m.json.gz",
+      "sha256": "c98d0f401c5acbd769a43dfa1cdcb73aace9b752f60032004d7d0af0b7b5c2c4"
+    },
+    {
+      "bytes": 364755,
+      "path": "data/development_2024_q1/XRP_USDT-5m.json.gz",
+      "sha256": "12117b02206a473306bfb606d7cf41d08878a38f9986cdcbd1f274d321068131"
+    },
+    {
+      "bytes": 3297923,
+      "path": "data/holdout_2025_h1/BTC_USDT-5m.json.gz",
+      "sha256": "07685d0d5ccd478dc906c8a2f1117720587d7e998a44aae752377d2054e051e6"
+    },
+    {
+      "bytes": 2973833,
+      "path": "data/holdout_2025_h1/ETH_USDT-5m.json.gz",
+      "sha256": "31b1f012ce2e4d7b7ac81f0485c46f8569c2fc166b77c86fedcb5d4c45f3e92b"
+    },
+    {
+      "bytes": 2461738,
+      "path": "data/holdout_2025_h1/XRP_USDT-5m.json.gz",
+      "sha256": "cf73bbb0238bf357a46f61044cf3a0b2ae0dab814ca78f9b01fc208793f2b252"
+    },
+    {
+      "bytes": 548210,
+      "path": "data/validation_2024_q3/BTC_USDT-5m.json.gz",
+      "sha256": "f3524386a9f9331598466d462adf1cadfad4ae3c32834f4eae6b0d4939ee0949"
+    },
+    {
+      "bytes": 503025,
+      "path": "data/validation_2024_q3/ETH_USDT-5m.json.gz",
+      "sha256": "8433e3b344584f0a06bc34f363eeb7dac1c4038474de4a9545e85d0e364f110a"
+    },
+    {
+      "bytes": 359792,
+      "path": "data/validation_2024_q3/XRP_USDT-5m.json.gz",
+      "sha256": "8617ca46bc0bd6cae4b6d51236b93b63da6bc4494572895d8b8535f22d59eebd"
+    }
+  ],
+  "schema_version": 1,
+  "source": {
+    "exchange": "binance",
+    "freqtrade_version": "freqtrade 2026.8-dev-a11233e93",
+    "locked_at_utc": "2026-08-28T01:32:38.818879+00:00",
+    "source_run": "https://github.com/coylin-zy/binance-bot/actions/runs/33133017977"
+  }
+}

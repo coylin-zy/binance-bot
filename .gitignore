@@ -15,6 +15,7 @@ user_data/notebooks/*
 freqtrade-plot.html
 freqtrade-profit-plot.html
 strategy_validation/output/
+strategy_validation/snapshot-download-*/
 .venv-validation/
 freqtrade/rpc/api_server/ui/*
 build_helpers/ta-lib/*

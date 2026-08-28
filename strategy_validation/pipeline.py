@@ -266,7 +266,6 @@ def summarize_backtest(zip_path: Path, strategy: str, phase: dict[str, Any]) -> 
         "wins",
         "draws",
         "losses",
-        "profit_total_pct",
         "profit_factor",
         "max_drawdown_account",
         "sharpe",
@@ -276,6 +275,10 @@ def summarize_backtest(zip_path: Path, strategy: str, phase: dict[str, Any]) -> 
         "backtest_end",
     )
     result = {key: stats.get(key) for key in keys}
+    profit_total_pct = stats.get("profit_total_pct")
+    if profit_total_pct is None and stats.get("profit_total") is not None:
+        profit_total_pct = float(stats["profit_total"]) * 100
+    result["profit_total_pct"] = profit_total_pct
     result.update(
         {
             "id": phase["id"],
