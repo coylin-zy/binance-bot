@@ -5,6 +5,8 @@ This repository keeps the complete workspace in one place:
 - Freqtrade core and its upstream history
 - `user_data/strategies/SimpleSpot.py` for the current spot strategy
 - `user_data/config.us.example.json` as a secret-free Binance US dry-run template
+- a fixed validation universe of BTC/USDT, ETH/USDT, and XRP/USDT through
+  `StaticPairList`
 - `dashboard/` for the responsive operations dashboard
 - `deploy/` for deployment-specific configuration
 

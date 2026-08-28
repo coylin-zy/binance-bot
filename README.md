@@ -15,6 +15,7 @@ custom Next.js operations dashboard and reproducible Docker deployment files.
 | --- | --- |
 | Freqtrade core and history | Included |
 | Spot strategy | Included; requires backtest and forward validation |
+| Trading universe | Fixed BTC/USDT, ETH/USDT, XRP/USDT via `StaticPairList` |
 | Secret-free configuration template | Included |
 | Dashboard | Implemented with REST BFF and server-side realtime bridge |
 | Docker and Nginx files | Included |
@@ -38,6 +39,8 @@ and shared with the dashboard through the explicitly named Docker network
 ## Safety boundaries
 
 - The tracked configuration template has `dry_run: true`.
+- The validation-stage trading universe is fixed to BTC/USDT, ETH/USDT, and XRP/USDT
+  with `StaticPairList`; dynamic volume selection is intentionally disabled.
 - Freqtrade API credentials and tokens remain server-side.
 - Dashboard sessions use HttpOnly, same-site cookies.
 - The BFF permits read endpoints plus `pause`, `stop`, and `start`.
@@ -79,6 +82,8 @@ in [BINANCE_BOT.md](BINANCE_BOT.md).
 ## Validation
 
 Repository and dashboard checks run on every pull request and every push to `main`.
+The repository-safety job also rejects changes that replace the fixed whitelist or
+`StaticPairList`, so the configured trading universe cannot drift silently.
 
 ```bash
 FREQTRADE_WS_TOKEN=local-check docker compose config

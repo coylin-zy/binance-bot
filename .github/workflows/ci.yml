@@ -46,6 +46,21 @@ jobs:
           if invalid:
               raise SystemExit(f"Template contains non-placeholder API values: {invalid}")
 
+          expected_pairs = ["BTC/USDT", "ETH/USDT", "XRP/USDT"]
+          actual_pairs = config.get("exchange", {}).get("pair_whitelist")
+          if actual_pairs != expected_pairs:
+              raise SystemExit(
+                  f"Trading universe must remain fixed to {expected_pairs}, got {actual_pairs}"
+              )
+
+          expected_pairlists = [{"method": "StaticPairList"}]
+          actual_pairlists = config.get("pairlists")
+          if actual_pairlists != expected_pairlists:
+              raise SystemExit(
+                  "The validation phase requires StaticPairList as the only pairlist "
+                  f"handler, got {actual_pairlists}"
+              )
+
           strategy_path = Path("user_data/strategies/SimpleSpot.py")
           compile(strategy_path.read_text(encoding="utf-8"), str(strategy_path), "exec")
           PY
