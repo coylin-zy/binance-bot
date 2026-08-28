@@ -2,7 +2,7 @@
 
 [![Project CI](https://github.com/coylin-zy/binance-bot/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/coylin-zy/binance-bot/actions/workflows/ci.yml)
 
-A private-by-design Binance US spot trading workspace built around Freqtrade, with a
+A private-by-design Binance global spot trading workspace built around Freqtrade, with a
 custom Next.js operations dashboard and reproducible Docker deployment files.
 
 > This repository is for research and dry-run operation first. The included template
@@ -16,6 +16,7 @@ custom Next.js operations dashboard and reproducible Docker deployment files.
 | Freqtrade core and history | Included |
 | Spot strategy | Included; requires backtest and forward validation |
 | Trading universe | Fixed BTC/USDT, ETH/USDT, XRP/USDT via `StaticPairList` |
+| Strategy validation | Reproducible fixed-data pipeline included |
 | Secret-free configuration template | Included |
 | Dashboard | Implemented with REST BFF and server-side realtime bridge |
 | Docker and Nginx files | Included |
@@ -29,7 +30,7 @@ flowchart TD
     U["Browser"] -->|HTTPS| N["Nginx"]
     N --> D["Next.js dashboard"]
     D -->|Private REST and WebSocket| F["Freqtrade"]
-    F --> E["Binance US"]
+    F --> E["Binance global"]
 ```
 
 Only Nginx is intended to be public. Freqtrade is bound to the host loopback interface
@@ -55,7 +56,7 @@ Requirements: Git, Docker with Compose v2, and Node.js 20+ for local dashboard c
 ```bash
 git clone https://github.com/coylin-zy/binance-bot.git
 cd binance-bot
-cp user_data/config.us.example.json user_data/config.us.json
+cp user_data/config.binance.example.json user_data/config.binance.json
 cp dashboard/.env.example dashboard/.env.local
 ```
 
@@ -84,6 +85,8 @@ in [BINANCE_BOT.md](BINANCE_BOT.md).
 Repository and dashboard checks run on every pull request and every push to `main`.
 The repository-safety job also rejects changes that replace the fixed whitelist or
 `StaticPairList`, so the configured trading universe cannot drift silently.
+The separate strategy-validation workflow verifies an immutable candle-data lock,
+three fee-aware market windows, lookahead bias, and recursive indicator stability.
 
 ```bash
 FREQTRADE_WS_TOKEN=local-check docker compose config
@@ -95,6 +98,11 @@ cd dashboard
 npm ci
 npm run check
 npm audit --audit-level=high
+
+cd ..
+python strategy_validation/pipeline.py validate --require-data
+python -m unittest discover -s strategy_validation/tests -v
+python strategy_validation/pipeline.py run --freqtrade freqtrade
 ```
 
 Before any deployment, complete
@@ -105,7 +113,7 @@ lookahead analysis, and a forward-testing period.
 ## Repository layout
 
 - `user_data/strategies/SimpleSpot.py` — current experimental spot strategy.
-- `user_data/config.us.example.json` — secret-free Binance US dry-run template.
+- `user_data/config.binance.example.json` — secret-free Binance global dry-run template.
 - `dashboard/` — Next.js monitoring and lifecycle console.
 - `deploy/` — Nginx and deployment-specific configuration.
 - `freqtrade/`, `tests/`, and `docs/` — preserved Freqtrade upstream source tree.

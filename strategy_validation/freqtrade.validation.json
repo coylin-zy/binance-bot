@@ -12,7 +12,7 @@
   "trading_mode": "spot",
   "margin_mode": "",
   "exchange": {
-    "name": "binanceus",
+    "name": "binance",
     "key": "",
     "secret": "",
     "ccxt_config": {},

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "strategy": "SimpleSpot",
-  "exchange": "binanceus",
+  "exchange": "binance",
   "trading_mode": "spot",
   "timeframe": "5m",
   "pairs": ["BTC/USDT", "ETH/USDT", "XRP/USDT"],
@@ -30,13 +30,14 @@
   ],
   "lookahead": {
     "phase": "holdout_2025_h1",
-    "minimum_trade_amount": 10,
+    "minimum_trade_amount": 5,
     "targeted_trade_amount": 20
   },
   "recursive": {
     "phase": "holdout_2025_h1",
     "pair": "BTC/USDT",
     "startup_candles": [49, 99, 199, 399, 999, 1999],
-    "strategy_startup_candle": 200
+    "strategy_startup_candle": 200,
+    "max_abs_variance_pct_at_strategy_startup": 0.1
   }
 }
