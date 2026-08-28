@@ -43,7 +43,7 @@ Reference SHA-256: `FFB33DDC7D96D4C6CA6CE7177FFF53AF4D8AFCD0374C24F7C3BB54B0D1F4
 
 - Desktop viewport: 1440 × 1000
 - Mobile viewport: 390 × 844
-- Production standalone preview connected to the local Freqtrade `2026.7` container in Binance US spot dry-run mode.
+- Historical production-standalone preview connected to the local Freqtrade `2026.7` container in Binance US spot dry-run mode. The current product configuration targets Binance global.
 - All routes returned the expected page identity: `/`, `/chart`, `/trades`, `/settings`.
 - Desktop and mobile document widths stayed at or below the viewport; no horizontal overflow was observed.
 - Browser console errors in the production pass: 0.
@@ -52,7 +52,7 @@ Reference SHA-256: `FFB33DDC7D96D4C6CA6CE7177FFF53AF4D8AFCD0374C24F7C3BB54B0D1F4
 - Realtime verified: authenticated SSE reports disconnected then connected after the server-side Freqtrade WebSocket is established.
 - Interactions verified: navigation, live pair switching, empty history state, and the reversible lifecycle transition `RUNNING → PAUSED → RUNNING`.
 - Automated verification: TypeScript, 7 unit tests, production build, and Compose configuration all passed.
-- Environment note: Binance US REST and the dashboard realtime channel work; the local network still times out on Binance market-data WebSockets, so Freqtrade falls back to its normal REST refresh path while remaining `RUNNING`.
+- Historical environment note: the original Binance US REST check and dashboard realtime channel worked; the local network timed out on market-data WebSockets, so Freqtrade fell back to its normal REST refresh path while remaining `RUNNING`. This record is not validation of the current Binance global target.
 
 Screenshots:
 

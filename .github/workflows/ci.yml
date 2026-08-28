@@ -32,10 +32,13 @@ jobs:
           import json
           from pathlib import Path
 
-          config_path = Path("user_data/config.us.example.json")
+          config_path = Path("user_data/config.binance.example.json")
           config = json.loads(config_path.read_text(encoding="utf-8"))
           if config.get("dry_run") is not True:
               raise SystemExit("The tracked configuration template must keep dry_run enabled")
+
+          if config.get("exchange", {}).get("name") != "binance":
+              raise SystemExit("The product runtime must target Binance global")
 
           api = config.get("api_server", {})
           placeholders = ("jwt_secret_key", "ws_token", "username", "password")
@@ -68,7 +71,7 @@ jobs:
       - name: Reject tracked runtime secrets and state
         shell: bash
         run: |
-          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|config\.us\.json|config\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
+          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|config\.us\.json|config\.binance\.json|config\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
           if [[ -n "$forbidden" ]]; then
             echo "Tracked runtime files are forbidden:"
             echo "$forbidden"
@@ -81,7 +84,7 @@ jobs:
         shell: bash
         run: |
           root_compose="$(docker compose config)"
-          grep -F -- "/freqtrade/user_data/config.us.json" <<<"$root_compose" >/dev/null
+          grep -F -- "/freqtrade/user_data/config.binance.json" <<<"$root_compose" >/dev/null
           grep -F -- "SimpleSpot" <<<"$root_compose" >/dev/null
 
           docker compose \

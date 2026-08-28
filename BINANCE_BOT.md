@@ -4,7 +4,7 @@ This repository keeps the complete workspace in one place:
 
 - Freqtrade core and its upstream history
 - `user_data/strategies/SimpleSpot.py` for the current spot strategy
-- `user_data/config.us.example.json` as a secret-free Binance US dry-run template
+- `user_data/config.binance.example.json` as a secret-free Binance global dry-run template
 - a fixed validation universe of BTC/USDT, ETH/USDT, and XRP/USDT through
   `StaticPairList`
 - `dashboard/` for the responsive operations dashboard
@@ -15,17 +15,17 @@ This repository keeps the complete workspace in one place:
 ```powershell
 git clone https://github.com/coylin-zy/binance-bot.git
 cd binance-bot
-Copy-Item user_data/config.us.example.json user_data/config.us.json
+Copy-Item user_data/config.binance.example.json user_data/config.binance.json
 Copy-Item dashboard/.env.example dashboard/.env.local
 ```
 
-Replace every `CHANGE_ME` value locally. Keep `user_data/config.us.json`,
+Replace every `CHANGE_ME` value locally. Keep `user_data/config.binance.json`,
 `dashboard/.env.local`, cookies, databases, and logs out of Git.
 
 Start Freqtrade from the repository root:
 
 ```powershell
-$env:FREQTRADE_WS_TOKEN = '<same websocket token as config.us.json>'
+$env:FREQTRADE_WS_TOKEN = '<same websocket token as config.binance.json>'
 docker compose up -d freqtrade
 ```
 
@@ -33,7 +33,7 @@ Start the dashboard from its directory:
 
 ```powershell
 cd dashboard
-$env:FREQTRADE_WS_TOKEN = '<same websocket token as config.us.json>'
+$env:FREQTRADE_WS_TOKEN = '<same websocket token as config.binance.json>'
 docker compose up -d --build
 ```
 

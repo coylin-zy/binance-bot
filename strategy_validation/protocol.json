@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "strategy": "SimpleSpot",
+  "exchange": "binance",
+  "trading_mode": "spot",
+  "timeframe": "5m",
+  "pairs": ["BTC/USDT", "ETH/USDT", "XRP/USDT"],
+  "fee_ratio": 0.001,
+  "starting_balance": 20,
+  "phases": [
+    {
+      "id": "development_2024_q1",
+      "role": "development",
+      "download_timerange": "20231229-20240401",
+      "timerange": "20240101-20240401"
+    },
+    {
+      "id": "validation_2024_q3",
+      "role": "validation",
+      "download_timerange": "20240729-20241101",
+      "timerange": "20240801-20241101"
+    },
+    {
+      "id": "holdout_2025_h1",
+      "role": "holdout",
+      "download_timerange": "20241229-20260701",
+      "timerange": "20250101-20260701",
+      "sealed": true
+    }
+  ],
+  "lookahead": {
+    "phase": "holdout_2025_h1",
+    "minimum_trade_amount": 5,
+    "targeted_trade_amount": 20
+  },
+  "recursive": {
+    "phase": "holdout_2025_h1",
+    "pair": "BTC/USDT",
+    "startup_candles": [49, 99, 199, 399, 999, 1999],
+    "strategy_startup_candle": 200,
+    "max_abs_variance_pct_at_strategy_startup": 0.1
+  }
+}
