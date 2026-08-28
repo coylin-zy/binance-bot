@@ -16,4 +16,4 @@ services:
 networks:
   ft-network:
     external: true
-    name: freqtrade_default
+    name: binance-bot_internal

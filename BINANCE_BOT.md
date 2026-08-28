@@ -35,5 +35,7 @@ $env:FREQTRADE_WS_TOKEN = '<same websocket token as config.us.json>'
 docker compose up -d --build
 ```
 
-The dashboard joins the root Compose network and communicates with Freqtrade
-internally. Do not expose the Freqtrade API port publicly.
+The root Compose project creates the explicitly named bridge network
+`binance-bot_internal`; the dashboard joins that network and communicates with the
+`freqtrade` service internally. Start Freqtrade before the dashboard. Do not expose
+the Freqtrade API port publicly.

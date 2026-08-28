@@ -1,13 +1,48 @@
 "use client";
 
-import { LogOut, Radio, SquareTerminal } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { LoaderCircle, LogOut, Radio, RefreshCw, SquareTerminal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { Button } from "@/components/ui/button";
 import { useRealtime } from "@/hooks/use-realtime";
 
 export function Topbar() {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const { connected, lastEventAt } = useRealtime();
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(null);
+  const [refreshStatus, setRefreshStatus] = useState<"idle" | "success" | "error">("idle");
+
+  const refreshAll = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setRefreshStatus("idle");
+    try {
+      await mutate((key) => typeof key === "string" && key.startsWith("/api/ft/"));
+      setLastRefreshAt(Date.now());
+      setRefreshStatus("success");
+    } catch {
+      setRefreshStatus("error");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [mutate, refreshing]);
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      const target = event.target;
+      const isTyping = target instanceof HTMLElement
+        && (target.matches("input, textarea, select") || target.isContentEditable);
+      if (!isTyping && event.altKey && event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        void refreshAll();
+      }
+    }
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [refreshAll]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -17,6 +52,7 @@ export function Topbar() {
 
   const stateLabel = connected === null ? "同步中" : connected ? "实时链路在线" : "实时链路离线";
   const stateColor = connected === null ? "var(--muted)" : connected ? "var(--terminal)" : "var(--danger)";
+  const latestActivityAt = Math.max(lastEventAt ?? 0, lastRefreshAt ?? 0) || null;
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--line-soft)] bg-[rgba(19,19,19,0.92)] backdrop-blur-md">
@@ -37,8 +73,14 @@ export function Topbar() {
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden text-[0.62rem] text-[var(--muted)] xl:inline">
-            {lastEventAt ? `LAST EVENT ${new Date(lastEventAt).toLocaleTimeString("zh-CN", { hour12: false })}` : "WAITING FOR EVENTS"}
+            {latestActivityAt ? `LAST ACTIVITY ${new Date(latestActivityAt).toLocaleTimeString("zh-CN", { hour12: false })}` : "WAITING FOR DATA"}
           </span>
+          {refreshStatus !== "idle" ? <span className={`hidden text-[0.6rem] font-bold lg:inline ${refreshStatus === "success" ? "text-[var(--terminal)]" : "text-[var(--danger)]"}`} role="status" aria-live="polite">{refreshStatus === "success" ? "SYNCED" : "SYNC FAILED"}</span> : null}
+          <Button variant="ghost" size="sm" onClick={() => void refreshAll()} disabled={refreshing} aria-label="刷新全部交易数据" title="刷新全部数据（Alt+R）">
+            {refreshing ? <LoaderCircle size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+            <span className="hidden sm:inline">{refreshing ? "刷新中" : "刷新"}</span>
+            <span className="terminal-kbd hidden lg:inline">ALT R</span>
+          </Button>
           <span className="hidden text-[0.62rem] text-[var(--muted)] lg:inline">HTTPONLY SESSION</span>
           <Button variant="ghost" size="sm" onClick={handleLogout} aria-label="退出登录">
             <LogOut size={15} />

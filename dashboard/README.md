@@ -75,7 +75,7 @@ Invoke-RestMethod http://localhost:3000/api/health
 
 ## Docker
 
-Compose 使用外部网络 `freqtrade_default`，应先启动 Freqtrade 服务。
+Compose 使用外部网络 `binance-bot_internal`，应先启动 Freqtrade 服务。
 
 ```powershell
 $env:FREQTRADE_WS_TOKEN = '<runtime token>'
