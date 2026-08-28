@@ -12,6 +12,10 @@ The protocol fixes:
 - development, validation, and sealed holdout roles
 - lookahead and recursive-formula checks
 
+The validation-only configuration routes public market-data calls through Binance's
+official `data-api.binance.vision` endpoint and limits CCXT market discovery to spot.
+It does not change or proxy the private API used by a real runtime configuration.
+
 `data/` contains versioned `json.gz` candle snapshots. `dataset-lock.json` records the
 SHA-256 and byte length of every file. CI fails if a candle changes, disappears, or is
 added without intentionally rebuilding the lock.

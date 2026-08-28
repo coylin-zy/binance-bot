@@ -15,8 +15,30 @@
     "name": "binance",
     "key": "",
     "secret": "",
-    "ccxt_config": {},
-    "ccxt_async_config": {},
+    "ccxt_config": {
+      "urls": {
+        "api": {
+          "public": "https://data-api.binance.vision/api/v3"
+        }
+      },
+      "options": {
+        "fetchMarkets": {
+          "types": ["spot"]
+        }
+      }
+    },
+    "ccxt_async_config": {
+      "urls": {
+        "api": {
+          "public": "https://data-api.binance.vision/api/v3"
+        }
+      },
+      "options": {
+        "fetchMarkets": {
+          "types": ["spot"]
+        }
+      }
+    },
     "pair_whitelist": ["BTC/USDT", "ETH/USDT", "XRP/USDT"],
     "pair_blacklist": []
   },
