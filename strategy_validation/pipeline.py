@@ -234,7 +234,11 @@ def run_command(command: list[str], log_path: Path) -> str:
     output = result.stdout or ""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_path.write_text(output, encoding="utf-8")
-    print(output, end="")
+    console_encoding = sys.stdout.encoding or "utf-8"
+    console_output = output.encode(console_encoding, errors="backslashreplace").decode(
+        console_encoding
+    )
+    print(console_output, end="")
     if result.returncode != 0:
         tail = "\n".join(output.splitlines()[-40:])
         raise PipelineError(f"Command failed ({result.returncode}): {' '.join(command)}\n{tail}")

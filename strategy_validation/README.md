@@ -35,3 +35,7 @@ Generated JSON, Markdown, raw backtest archives, and analysis logs are written b
 The holdout period must not be used to tune RSI, EMA, ROI, stoploss, trailing-stop, or
 future protection parameters. Any dataset refresh must happen in a dedicated reviewable
 change that regenerates `dataset-lock.json`.
+
+The sealed holdout spans 2025-01-01 through 2026-06-30. It is intentionally longer
+than the development and validation windows because the current strategy emits very
+few signals; the lookahead gate still requires at least five analyzed signals.

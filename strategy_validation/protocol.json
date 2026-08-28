@@ -23,8 +23,8 @@
     {
       "id": "holdout_2025_h1",
       "role": "holdout",
-      "download_timerange": "20241229-20250701",
-      "timerange": "20250101-20250701",
+      "download_timerange": "20241229-20260701",
+      "timerange": "20250101-20260701",
       "sealed": true
     }
   ],

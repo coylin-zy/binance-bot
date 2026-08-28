@@ -165,7 +165,7 @@ jobs:
             --timerange 20240729-20241101
           freqtrade download-data "${common[@]}" \
             --datadir strategy_validation/data/holdout_2025_h1 \
-            --timerange 20241229-20250701
+            --timerange 20241229-20260701
 
           tar -czf strategy-data.tar.gz strategy_validation/data
 
