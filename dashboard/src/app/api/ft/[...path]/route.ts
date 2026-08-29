@@ -54,3 +54,7 @@ export async function GET(req: NextRequest, ctx: Params) {
 export async function POST(req: NextRequest, ctx: Params) {
   return handle(req, ctx.params);
 }
+
+export async function DELETE(req: NextRequest, ctx: Params) {
+  return handle(req, ctx.params);
+}

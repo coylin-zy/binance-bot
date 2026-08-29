@@ -114,8 +114,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck, test, and build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Typecheck, unit test, build, and browser E2E
         run: npm run check
+
+      - name: Upload browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dashboard-playwright-failure
+          path: dashboard/test-results
+          if-no-files-found: ignore
 
       - name: Audit production dependency risk
         run: npm audit --omit=dev --audit-level=high
