@@ -40,6 +40,15 @@ jobs:
           if config.get("exchange", {}).get("name") != "binance":
               raise SystemExit("The product runtime must target Binance global")
 
+          if config.get("trading_mode") != "spot":
+              raise SystemExit("The tracked configuration template must remain spot-only")
+
+          if config.get("margin_mode") != "":
+              raise SystemExit("The spot configuration must not enable a margin mode")
+
+          if config.get("force_entry_enable") is not False:
+              raise SystemExit("Manual force-entry must remain disabled")
+
           api = config.get("api_server", {})
           placeholders = ("jwt_secret_key", "ws_token", "username", "password")
           invalid = [
@@ -71,7 +80,7 @@ jobs:
       - name: Reject tracked runtime secrets and state
         shell: bash
         run: |
-          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|config\.us\.json|config\.binance\.json|config\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
+          forbidden="$(git ls-files | grep -E '(^|/)(\.env\.local|cookies\.txt|bot\.coylin\.com\.nginx|config\.us\.json|config\.binance\.json|config\.json|.*\.sqlite(-shm|-wal)?|.*\.log)$' || true)"
           if [[ -n "$forbidden" ]]; then
             echo "Tracked runtime files are forbidden:"
             echo "$forbidden"

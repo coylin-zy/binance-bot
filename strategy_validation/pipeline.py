@@ -135,6 +135,12 @@ def validate_protocol(protocol: dict[str, Any]) -> None:
             raise PipelineError(f"{label} must keep dry_run enabled")
         if config.get("exchange", {}).get("name") != protocol["exchange"]:
             raise PipelineError(f"{label} exchange differs from protocol")
+        if config.get("trading_mode") != protocol["trading_mode"]:
+            raise PipelineError(f"{label} must remain spot-only")
+        if config.get("margin_mode") != "":
+            raise PipelineError(f"{label} must not enable a margin mode")
+        if config.get("force_entry_enable") is not False:
+            raise PipelineError(f"{label} must keep manual force-entry disabled")
         if config.get("exchange", {}).get("pair_whitelist") != expected_pairs:
             raise PipelineError(f"{label} does not match the fixed protocol pairs")
         if config.get("pairlists") != [{"method": "StaticPairList"}]:

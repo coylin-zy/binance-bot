@@ -62,8 +62,8 @@ npm audit
 npm run check
 ```
 
-`npm run check` 会在生产构建后自动启动 mock Freqtrade、Next.js production
-server 和 Chromium，覆盖登录、未认证 `401`、禁止端点 `403`、SSE、
+`npm run check` 会在生产构建后自动启动 mock Freqtrade、Next.js standalone
+server 和 Chromium，覆盖登录、退出、未认证 `401`、禁止端点 `403`、SSE、
 `RUNNING → PAUSED → RUNNING` 以及桌面和 390px 移动端页面溢出检查。
 
 模拟 Freqtrade API：

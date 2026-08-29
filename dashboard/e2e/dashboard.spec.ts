@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const routes = [
-  ["/", "量化机器人控制台"],
-  ["/chart", "市场遥测与策略标记"],
-  ["/trades", "收益分析与执行记录"],
-  ["/settings", "运行控制与安全配置"],
+  ["/", "量化机器人控制台", "DRY-RUN / SPOT"],
+  ["/chart", "市场遥测与策略标记", "READY"],
+  ["/trades", "收益分析与执行记录", "EXECUTIONS"],
+  ["/settings", "运行控制与安全配置", "BOT_RUNNING"],
 ] as const;
 
 function watchRuntimeErrors(page: Page) {
@@ -47,6 +47,7 @@ test("authentication and server-side security boundaries", async ({ page, reques
     const cookie = cookies.find((item) => item.name === name);
     expect(cookie, `${name} cookie should exist`).toBeDefined();
     expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.secure).toBe(true);
     expect(cookie?.sameSite).toBe("Strict");
   }
   expect(await page.evaluate(() => ({
@@ -70,6 +71,13 @@ test("authentication and server-side security boundaries", async ({ page, reques
   }
 
   expect(runtimeErrors.filter((error) => !error.includes("403 (Forbidden)"))).toEqual([]);
+
+  await page.getByRole("button", { name: "退出登录" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  const cookiesAfterLogout = await page.context().cookies();
+  for (const name of ["ft_access", "ft_refresh", "ft_user"]) {
+    expect(cookiesAfterLogout.find((item) => item.name === name)).toBeUndefined();
+  }
 });
 
 test("authenticated SSE and lifecycle transition are reversible", async ({ page }) => {
@@ -100,9 +108,13 @@ test("all product routes render without horizontal overflow", async ({ page }) =
   const runtimeErrors = watchRuntimeErrors(page);
   await authenticate(page);
 
-  for (const [route, heading] of routes) {
+  for (const [route, heading, readyText] of routes) {
     await page.goto(route);
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.getByText(readyText, { exact: true }).first()).toBeVisible();
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
     const dimensions = await page.evaluate(() => ({
       viewport: window.innerWidth,
       document: document.documentElement.scrollWidth,

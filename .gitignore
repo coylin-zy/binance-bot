@@ -20,6 +20,11 @@ strategy_validation/snapshot-download-*/
 freqtrade/rpc/api_server/ui/*
 build_helpers/ta-lib/*
 
+# Local operator artifacts
+/cookies.txt
+/bot.coylin.com.nginx
+/.playwright-cli/
+
 # Macos related
 .DS_Store
 

@@ -43,7 +43,7 @@ export async function getSession(): Promise<SessionTokens | null> {
 export async function clearSession() {
   const store = await cookies();
   [ACCESS_COOKIE, REFRESH_COOKIE, SESSION_USER].forEach((c) => {
-    store.set(c, "", { path: "/", maxAge: 0 });
+    store.set(c, "", { ...sessionOptions, maxAge: 0 });
   });
 }
 
