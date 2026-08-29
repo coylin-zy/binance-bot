@@ -26,12 +26,14 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: `npm run start -- --hostname 127.0.0.1 --port ${dashboardPort}`,
+      command: "npm run start",
       url: `${dashboardUrl}/login`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
         ...process.env,
+        HOSTNAME: "127.0.0.1",
+        PORT: String(dashboardPort),
         FREQTRADE_URL: "http://127.0.0.1:18080",
         FREQTRADE_WS_TOKEN: "qa-websocket-token",
         FREQTRADE_TIMEOUT_MS: "3000",

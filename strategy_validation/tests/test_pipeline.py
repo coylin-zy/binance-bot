@@ -1,7 +1,9 @@
 import json
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 from zipfile import ZipFile
 
 from strategy_validation import pipeline
@@ -11,6 +13,30 @@ class StrategyValidationTests(unittest.TestCase):
     def test_current_protocol_is_valid(self) -> None:
         protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
         pipeline.validate_protocol(protocol)
+
+    def test_unsafe_runtime_modes_are_rejected(self) -> None:
+        protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
+        runtime_template = pipeline.read_json(pipeline.RUNTIME_TEMPLATE_PATH)
+        real_read_json = pipeline.read_json
+        unsafe_values = (
+            ("trading_mode", "futures"),
+            ("margin_mode", "isolated"),
+            ("force_entry_enable", True),
+        )
+
+        for key, value in unsafe_values:
+            with self.subTest(key=key, value=value):
+                unsafe_template = deepcopy(runtime_template)
+                unsafe_template[key] = value
+
+                def read_json(path: Path) -> dict:
+                    if path == pipeline.RUNTIME_TEMPLATE_PATH:
+                        return unsafe_template
+                    return real_read_json(path)
+
+                with patch.object(pipeline, "read_json", side_effect=read_json):
+                    with self.assertRaises(pipeline.PipelineError):
+                        pipeline.validate_protocol(protocol)
 
     def test_recursive_no_variance_output(self) -> None:
         result = pipeline.parse_recursive_output(
