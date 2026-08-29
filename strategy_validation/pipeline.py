@@ -127,6 +127,19 @@ def validate_protocol(protocol: dict[str, Any]) -> None:
 
     validation_config = read_json(CONFIG_PATH)
     runtime_template = read_json(RUNTIME_TEMPLATE_PATH)
+    expected_ccxt_config = {
+        "urls": {"api": {"public": "https://data-api.binance.vision/api/v3"}},
+        "options": {"fetchMarkets": {"types": ["spot"]}},
+    }
+    expected_ccxt_async_config = {
+        "urls": {
+            "api": {
+                "public": "https://data-api.binance.vision/api/v3",
+                "ws": {"spot": "wss://data-stream.binance.vision/ws"},
+            }
+        },
+        "options": {"fetchMarkets": {"types": ["spot"]}},
+    }
     for label, config in (
         ("validation config", validation_config),
         ("runtime template", runtime_template),
@@ -141,8 +154,19 @@ def validate_protocol(protocol: dict[str, Any]) -> None:
             raise PipelineError(f"{label} must not enable a margin mode")
         if config.get("force_entry_enable") is not False:
             raise PipelineError(f"{label} must keep manual force-entry disabled")
-        if config.get("exchange", {}).get("pair_whitelist") != expected_pairs:
+        exchange = config.get("exchange", {})
+        if exchange.get("pair_whitelist") != expected_pairs:
             raise PipelineError(f"{label} does not match the fixed protocol pairs")
+        if exchange.get("ccxt_config") != expected_ccxt_config:
+            raise PipelineError(
+                f"{label} ccxt_config must use Binance global's public "
+                "market-data endpoint and spot-only discovery"
+            )
+        if exchange.get("ccxt_async_config") != expected_ccxt_async_config:
+            raise PipelineError(
+                f"{label} ccxt_async_config must use Binance global's public "
+                "market-data REST/WebSocket endpoints and spot-only discovery"
+            )
         if config.get("pairlists") != [{"method": "StaticPairList"}]:
             raise PipelineError(f"{label} must use only StaticPairList")
     if validation_config.get("timeframe") != protocol["timeframe"]:

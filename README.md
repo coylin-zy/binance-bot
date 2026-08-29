@@ -42,6 +42,8 @@ and shared with the dashboard through the explicitly named Docker network
 - The tracked configuration template has `dry_run: true`.
 - The validation-stage trading universe is fixed to BTC/USDT, ETH/USDT, and XRP/USDT
   with `StaticPairList`; dynamic volume selection is intentionally disabled.
+- Dry-run public market data uses Binance global's market-data-only endpoint and
+  restricts CCXT market discovery to spot, so futures endpoints are never required.
 - Freqtrade API credentials and tokens remain server-side.
 - Dashboard sessions use HttpOnly, same-site cookies.
 - The BFF permits read endpoints plus `pause`, `stop`, and `start`.
@@ -79,6 +81,10 @@ docker compose up -d --build
 The dashboard is published only on `127.0.0.1:3000`; use the Nginx configuration under
 `deploy/nginx/` for HTTPS access. PowerShell equivalents and machine-resume notes are
 in [BINANCE_BOT.md](BINANCE_BOT.md).
+
+The template routes both REST candles and public spot WebSocket candles through
+Binance global's market-data-only endpoints. These endpoints expose public market
+data only; account and order operations still require the normal authenticated API.
 
 ## Validation
 

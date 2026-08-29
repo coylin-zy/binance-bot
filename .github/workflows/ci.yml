@@ -49,6 +49,45 @@ jobs:
           if config.get("force_entry_enable") is not False:
               raise SystemExit("Manual force-entry must remain disabled")
 
+          expected_ccxt_config = {
+              "urls": {
+                  "api": {
+                      "public": "https://data-api.binance.vision/api/v3",
+                  },
+              },
+              "options": {
+                  "fetchMarkets": {
+                      "types": ["spot"],
+                  },
+              },
+          }
+          expected_ccxt_async_config = {
+              "urls": {
+                  "api": {
+                      "public": "https://data-api.binance.vision/api/v3",
+                      "ws": {
+                          "spot": "wss://data-stream.binance.vision/ws",
+                      },
+                  },
+              },
+              "options": {
+                  "fetchMarkets": {
+                      "types": ["spot"],
+                  },
+              },
+          }
+          exchange = config.get("exchange", {})
+          if exchange.get("ccxt_config") != expected_ccxt_config:
+              raise SystemExit(
+                  "ccxt_config must use Binance global's public market-data "
+                  "endpoint and spot-only discovery"
+              )
+          if exchange.get("ccxt_async_config") != expected_ccxt_async_config:
+              raise SystemExit(
+                  "ccxt_async_config must use Binance global's public market-data "
+                  "REST/WebSocket endpoints and spot-only discovery"
+              )
+
           api = config.get("api_server", {})
           placeholders = ("jwt_secret_key", "ws_token", "username", "password")
           invalid = [

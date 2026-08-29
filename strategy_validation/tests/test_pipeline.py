@@ -38,6 +38,49 @@ class StrategyValidationTests(unittest.TestCase):
                     with self.assertRaises(pipeline.PipelineError):
                         pipeline.validate_protocol(protocol)
 
+    def test_runtime_market_data_drift_is_rejected(self) -> None:
+        protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
+        runtime_template = pipeline.read_json(pipeline.RUNTIME_TEMPLATE_PATH)
+        real_read_json = pipeline.read_json
+        unsafe_values = (
+            ("ccxt_config", {}),
+            (
+                "ccxt_async_config",
+                {
+                    "urls": {
+                        "api": {
+                            "public": "https://data-api.binance.vision/api/v3",
+                            "ws": {"spot": "wss://stream.binance.com:9443/ws"},
+                        }
+                    },
+                    "options": {"fetchMarkets": {"types": ["spot"]}},
+                },
+            ),
+            (
+                "ccxt_async_config",
+                {
+                    "urls": {
+                        "api": {"public": "https://data-api.binance.vision/api/v3"}
+                    },
+                    "options": {"fetchMarkets": {"types": ["spot", "linear"]}},
+                },
+            ),
+        )
+
+        for key, value in unsafe_values:
+            with self.subTest(key=key, value=value):
+                unsafe_template = deepcopy(runtime_template)
+                unsafe_template["exchange"][key] = value
+
+                def read_json(path: Path) -> dict:
+                    if path == pipeline.RUNTIME_TEMPLATE_PATH:
+                        return unsafe_template
+                    return real_read_json(path)
+
+                with patch.object(pipeline, "read_json", side_effect=read_json):
+                    with self.assertRaises(pipeline.PipelineError):
+                        pipeline.validate_protocol(protocol)
+
     def test_recursive_no_variance_output(self) -> None:
         result = pipeline.parse_recursive_output(
             "No variance on indicator(s) found due to recursive formula.", 200, 0.1
