@@ -22,6 +22,10 @@ Copy-Item dashboard/.env.example dashboard/.env.local
 Replace every `CHANGE_ME` value locally. Keep `user_data/config.binance.json`,
 `dashboard/.env.local`, cookies, databases, and logs out of Git.
 
+The template keeps `exchange.name` set to Binance global. For dry-run public data it
+uses Binance's market-data-only REST and WebSocket endpoints and restricts CCXT
+discovery to spot, avoiding any dependency on Binance US or futures endpoints.
+
 Start Freqtrade from the repository root:
 
 ```powershell

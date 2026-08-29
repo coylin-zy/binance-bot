@@ -45,7 +45,10 @@
     "ccxt_async_config": {
       "urls": {
         "api": {
-          "public": "https://data-api.binance.vision/api/v3"
+          "public": "https://data-api.binance.vision/api/v3",
+          "ws": {
+            "spot": "wss://data-stream.binance.vision/ws"
+          }
         }
       },
       "options": {
