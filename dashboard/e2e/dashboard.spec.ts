@@ -1,0 +1,116 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const routes = [
+  ["/", "量化机器人控制台"],
+  ["/chart", "市场遥测与策略标记"],
+  ["/trades", "收益分析与执行记录"],
+  ["/settings", "运行控制与安全配置"],
+] as const;
+
+function watchRuntimeErrors(page: Page) {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  return errors;
+}
+
+async function authenticate(page: Page) {
+  await page.goto("/login");
+  await expect(page).toHaveTitle(/Neural Terminal/);
+  await expect(page.getByRole("heading", { name: "身份验证终端" })).toBeVisible();
+  await page.getByLabel(/Access id/i).fill("qa-user");
+  await page.getByLabel(/Secret key/i).fill("qa-password");
+  await page.getByRole("button", { name: /Initialize secure session/i }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "量化机器人控制台" })).toBeVisible();
+}
+
+test("authentication and server-side security boundaries", async ({ page, request }) => {
+  const runtimeErrors = watchRuntimeErrors(page);
+
+  const unauthenticatedBff = await request.get("/api/ft/balance");
+  expect(unauthenticatedBff.status()).toBe(401);
+  const unauthenticatedEvents = await request.get("/api/events");
+  expect(unauthenticatedEvents.status()).toBe(401);
+
+  const loginResponse = await page.goto("/");
+  await expect(page).toHaveURL(/\/login$/);
+  expect(loginResponse?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(loginResponse?.headers()["x-frame-options"]).toBe("DENY");
+
+  await authenticate(page);
+
+  const cookies = await page.context().cookies();
+  for (const name of ["ft_access", "ft_refresh", "ft_user"]) {
+    const cookie = cookies.find((item) => item.name === name);
+    expect(cookie, `${name} cookie should exist`).toBeDefined();
+    expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.sameSite).toBe("Strict");
+  }
+  expect(await page.evaluate(() => ({
+    local: Object.keys(localStorage),
+    session: Object.keys(sessionStorage),
+  }))).toEqual({ local: [], session: [] });
+
+  const forbiddenRequests = [
+    ["POST", "/api/ft/forceenter"],
+    ["POST", "/api/ft/forceexit"],
+    ["DELETE", "/api/ft/trades/1048"],
+    ["POST", "/api/ft/reload_config"],
+  ] as const;
+  for (const [method, path] of forbiddenRequests) {
+    const response = await page.evaluate(async ({ method, path }) => {
+      const result = await fetch(path, { method });
+      return { status: result.status, body: await result.json() };
+    }, { method, path });
+    expect(response.status, `${method} ${path}`).toBe(403);
+    expect(response.body).toMatchObject({ error: expect.stringContaining("not allowed") });
+  }
+
+  expect(runtimeErrors.filter((error) => !error.includes("403 (Forbidden)"))).toEqual([]);
+});
+
+test("authenticated SSE and lifecycle transition are reversible", async ({ page }) => {
+  const runtimeErrors = watchRuntimeErrors(page);
+  await authenticate(page);
+  await expect(page.getByText("实时数据链路已连接", { exact: true })).toBeVisible({ timeout: 15_000 });
+
+  await page.goto("/settings");
+  await expect(page.getByText("RUNNING", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "暂停新开仓" }).click();
+  const pauseDialog = page.getByRole("alertdialog", { name: "确认暂停新开仓？" });
+  await expect(pauseDialog).toBeVisible();
+  await pauseDialog.getByRole("button", { name: "确认暂停" }).click();
+  await expect(page.getByText("PAUSED", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("暂停新开仓指令已由 Freqtrade 接收");
+
+  await page.getByRole("button", { name: "恢复运行" }).click();
+  const resumeDialog = page.getByRole("alertdialog", { name: "确认启动机器人？" });
+  await expect(resumeDialog).toBeVisible();
+  await resumeDialog.getByRole("button", { name: "确认启动" }).click();
+  await expect(page.getByText("RUNNING", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("启动机器人指令已由 Freqtrade 接收");
+
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("all product routes render without horizontal overflow", async ({ page }) => {
+  const runtimeErrors = watchRuntimeErrors(page);
+  await authenticate(page);
+
+  for (const [route, heading] of routes) {
+    await page.goto(route);
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      document: document.documentElement.scrollWidth,
+      body: document.body.scrollWidth,
+    }));
+    expect(dimensions.document, `${route} document overflow`).toBeLessThanOrEqual(dimensions.viewport + 1);
+    expect(dimensions.body, `${route} body overflow`).toBeLessThanOrEqual(dimensions.viewport + 1);
+  }
+
+  expect(runtimeErrors).toEqual([]);
+});

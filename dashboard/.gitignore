@@ -8,4 +8,6 @@ coverage/
 design-qa-*.png
 output/
 .playwright-cli/
+playwright-report/
+test-results/
 *.log
