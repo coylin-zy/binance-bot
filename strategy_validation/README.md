@@ -3,6 +3,11 @@
 This directory defines the evidence pipeline for `SimpleSpot`. It intentionally does
 not run Hyperopt and it does not approve live trading.
 
+The pipeline also produces a strategy-diagnostics section for every phase and pair.
+It counts RSI/EMA candidates, measures EMA filtering, and calculates fee-aware
+forward returns plus 24-hour MFE/MAE. Exit-reason counts are read from the actual
+Freqtrade backtest archive rather than inferred from the candle data.
+
 The protocol fixes:
 
 - Binance global spot as the exchange and trading mode
@@ -11,6 +16,7 @@ The protocol fixes:
 - a 0.1% fee on entry and again on exit
 - development, validation, and sealed holdout roles
 - lookahead and recursive-formula checks
+- signal frequency, EMA filtering, forward returns, MFE/MAE, regimes, and exit reasons
 
 The validation-only configuration routes public market-data calls through Binance's
 official `data-api.binance.vision` REST endpoint and
@@ -28,6 +34,14 @@ Freqtrade is installed:
 python strategy_validation/pipeline.py validate --require-data
 python -m unittest discover -s strategy_validation/tests -v
 python strategy_validation/pipeline.py run --freqtrade freqtrade
+```
+
+To inspect one locked candle file without running a backtest:
+
+```bash
+python strategy_validation/diagnostics.py \
+  strategy_validation/data/holdout_2025_h1/BTC_USDT-5m.json.gz \
+  --pair BTC/USDT
 ```
 
 Generated JSON, Markdown, raw backtest archives, and analysis logs are written beneath

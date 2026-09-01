@@ -14,6 +14,19 @@ class StrategyValidationTests(unittest.TestCase):
         protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
         pipeline.validate_protocol(protocol)
 
+    def test_locked_candle_diagnostics_cover_every_phase_and_pair(self) -> None:
+        protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
+        diagnostics = pipeline.build_candle_diagnostics(protocol)
+        self.assertEqual(len(diagnostics), 3)
+        self.assertEqual(
+            [len(phase["pairs"]) for phase in diagnostics],
+            [len(protocol["pairs"])] * len(protocol["phases"]),
+        )
+        for phase in diagnostics:
+            for pair_report in phase["pairs"]:
+                self.assertEqual(set(pair_report["forward_return_net"]), {"1h", "4h", "12h", "24h"})
+                self.assertIn("ema_filtered_candidates", pair_report["signals"])
+
     def test_unsafe_runtime_modes_are_rejected(self) -> None:
         protocol = pipeline.read_json(pipeline.PROTOCOL_PATH)
         runtime_template = pipeline.read_json(pipeline.RUNTIME_TEMPLATE_PATH)
@@ -29,7 +42,7 @@ class StrategyValidationTests(unittest.TestCase):
                 unsafe_template = deepcopy(runtime_template)
                 unsafe_template[key] = value
 
-                def read_json(path: Path) -> dict:
+                def read_json(path: Path, unsafe_template=unsafe_template) -> dict:
                     if path == pipeline.RUNTIME_TEMPLATE_PATH:
                         return unsafe_template
                     return real_read_json(path)
@@ -72,7 +85,7 @@ class StrategyValidationTests(unittest.TestCase):
                 unsafe_template = deepcopy(runtime_template)
                 unsafe_template["exchange"][key] = value
 
-                def read_json(path: Path) -> dict:
+                def read_json(path: Path, unsafe_template=unsafe_template) -> dict:
                     if path == pipeline.RUNTIME_TEMPLATE_PATH:
                         return unsafe_template
                     return real_read_json(path)
