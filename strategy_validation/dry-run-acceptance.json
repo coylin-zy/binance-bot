@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "version": "dry-run-v1",
+  "status": "frozen",
+  "scope": "SimpleSpot / Binance global spot / fixed BTC-ETH-XRP universe",
+  "effective_before": "The first forward-test observation",
+  "criteria": {
+    "min_trade_count": 30,
+    "min_profit_factor": 1.05,
+    "max_drawdown_ratio": 0.1,
+    "min_net_return_ratio": 0.0,
+    "max_single_pair_pnl_contribution_ratio": 0.75,
+    "max_consecutive_losses": 6,
+    "max_signal_divergence_ratio": 0.05,
+    "max_fill_deviation_ratio": 0.0025,
+    "min_uptime_ratio": 0.99,
+    "max_api_error_ratio": 0.01,
+    "require_restart_recovery": true,
+    "require_data_integrity": true
+  },
+  "interpretation": {
+    "failure_status": "research_failed",
+    "pass_status": "passed",
+    "note": "These are research gates for a forward dry-run, not a real-money approval. A pass never authorizes live trading."
+  }
+}
