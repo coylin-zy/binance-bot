@@ -11,10 +11,26 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
+
+
+try:
+    from strategy_validation.diagnostics import (
+        DiagnosticsError,
+        load_and_analyze,
+        summarize_backtest_archive,
+        timeframe_to_minutes,
+    )
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution
+    from diagnostics import (  # type: ignore[no-redef]
+        DiagnosticsError,
+        load_and_analyze,
+        summarize_backtest_archive,
+        timeframe_to_minutes,
+    )
 
 
 HERE = Path(__file__).resolve().parent
@@ -58,7 +74,8 @@ def parse_timerange(value: str) -> tuple[datetime, datetime]:
     return start, end
 
 
-def validate_protocol(protocol: dict[str, Any]) -> None:
+# The protocol guard is intentionally exhaustive.
+def validate_protocol(protocol: dict[str, Any]) -> None:  # noqa: C901
     expected_pairs = ["BTC/USDT", "ETH/USDT", "XRP/USDT"]
     expected_scalars = {
         "schema_version": 1,
@@ -119,7 +136,9 @@ def validate_protocol(protocol: dict[str, Any]) -> None:
     if recursive.get("strategy_startup_candle") != 200:
         raise PipelineError("Protocol must verify SimpleSpot startup_candle_count=200")
     startup_candles = recursive.get("startup_candles", [])
-    if not startup_candles or any(not isinstance(value, int) or value <= 0 for value in startup_candles):
+    if not startup_candles or any(
+        not isinstance(value, int) or value <= 0 for value in startup_candles
+    ):
         raise PipelineError("Recursive startup candles must be positive integers")
     threshold = recursive.get("max_abs_variance_pct_at_strategy_startup")
     if not isinstance(threshold, (int, float)) or threshold < 0:
@@ -214,7 +233,7 @@ def build_data_lock(source_run: str, freqtrade_version: str) -> dict[str, Any]:
             "exchange": protocol["exchange"],
             "source_run": source_run,
             "freqtrade_version": freqtrade_version,
-            "locked_at_utc": datetime.now(timezone.utc).isoformat(),
+            "locked_at_utc": datetime.now(UTC).isoformat(),
         },
         "files": entries,
     }
@@ -348,7 +367,8 @@ def parse_lookahead(csv_path: Path, strategy: str, minimum_signals: int) -> dict
     return result
 
 
-def parse_recursive_output(
+# The parser validates several terminal output formats.
+def parse_recursive_output(  # noqa: C901
     output: str, strategy_startup: int, max_variance_pct: float
 ) -> dict[str, Any]:
     clean = ANSI_RE.sub("", output)
@@ -416,6 +436,38 @@ def parse_recursive_output(
     return result
 
 
+def build_candle_diagnostics(protocol: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build per-phase/per-pair diagnostics from the locked candle snapshots."""
+
+    timeframe_minutes = timeframe_to_minutes(protocol["timeframe"])
+    phases: list[dict[str, Any]] = []
+    for phase in protocol["phases"]:
+        pair_reports: list[dict[str, Any]] = []
+        for pair in protocol["pairs"]:
+            pair_name = pair.replace("/", "_").replace(":", "_")
+            path = DATA_ROOT / phase["id"] / f"{pair_name}-{protocol['timeframe']}.json.gz"
+            try:
+                pair_reports.append(
+                    load_and_analyze(
+                        path,
+                        pair,
+                        timeframe_minutes=timeframe_minutes,
+                        fee_ratio=protocol["fee_ratio"],
+                    )
+                )
+            except DiagnosticsError as exc:
+                raise PipelineError(f"Diagnostics failed for {phase['id']} {pair}: {exc}") from exc
+        phases.append(
+            {
+                "id": phase["id"],
+                "role": phase["role"],
+                "timerange": phase["timerange"],
+                "pairs": pair_reports,
+            }
+        )
+    return phases
+
+
 def phase_by_id(protocol: dict[str, Any], phase_id: str) -> dict[str, Any]:
     return next(phase for phase in protocol["phases"] if phase["id"] == phase_id)
 
@@ -460,6 +512,64 @@ def render_markdown(report: dict[str, Any]) -> str:
                 sharpe=phase.get("sharpe", "-"),
             )
         )
+    lines.extend(
+        [
+            "",
+            "## Signal diagnostics",
+            "",
+            (
+                "Signal counts reproduce SimpleSpot's RSI/EMA conditions; forward metrics use only "
+                "candles after each entry."
+            ),
+            "",
+            (
+                "| Window | Pair | Rows | RSI >30 crosses | EMA filtered | Entries | "
+                "Entry frequency | 24h net mean | 24h MFE | 24h MAE |"
+            ),
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for phase in report.get("diagnostics", []):
+        for pair_report in phase["pairs"]:
+            signals = pair_report["signals"]
+            forward_24h = pair_report["forward_return_net"].get("24h", {})
+            rows = pair_report["rows"]
+            frequency = signals["entry_signals"] / rows if rows else 0
+            lines.append(
+                "| {window} | {pair} | {rows} | {crosses} | {filtered} | {entries} | "
+                "{frequency:.4%} | "
+                "{return_mean} | {mfe} | {mae} |".format(
+                    window=phase["id"],
+                    pair=pair_report["pair"],
+                    rows=rows,
+                    crosses=signals["rsi_crosses_above_30"],
+                    filtered=signals["ema_filtered_candidates"],
+                    entries=signals["entry_signals"],
+                    frequency=frequency,
+                    return_mean="-"
+                    if forward_24h.get("mean") is None
+                    else f"{forward_24h['mean']:.2%}",
+                    mfe="-"
+                    if pair_report["mfe_24h"].get("mean") is None
+                    else f"{pair_report['mfe_24h']['mean']:.2%}",
+                    mae="-"
+                    if pair_report["mae_24h"].get("mean") is None
+                    else f"{pair_report['mae_24h']['mean']:.2%}",
+                )
+            )
+    lines.extend(
+        [
+            "",
+            "### Backtest exit reasons",
+            "",
+            "| Window | Exit reason | Trades |",
+            "| --- | --- | ---: |",
+        ]
+    )
+    for phase in report.get("diagnostics", []):
+        for reason, count in phase.get("backtest", {}).get("exit_reasons", {}).items():
+            lines.append(f"| {phase['id']} | `{reason}` | {count} |")
+
     lookahead = report["lookahead"]
     recursive = report["recursive"]
     lines.extend(
@@ -467,11 +577,15 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             "## Bias and recursion checks",
             "",
-            f"- Lookahead bias: **{'detected' if lookahead['has_bias'] else 'not detected'}** "
-            f"across {lookahead['total_signals']} checked signals.",
-            f"- Recursive analysis: `{recursive['status']}`; maximum absolute variance at "
-            f"startup candle {recursive['strategy_startup_candle']} was "
-            f"`{recursive['max_abs_variance_pct']:.6f}%`.",
+            (
+                f"- Lookahead bias: **{'detected' if lookahead['has_bias'] else 'not detected'}** "
+                f"across {lookahead['total_signals']} checked signals."
+            ),
+            (
+                f"- Recursive analysis: `{recursive['status']}`; maximum absolute variance at "
+                f"startup candle {recursive['strategy_startup_candle']} was "
+                f"`{recursive['max_abs_variance_pct']:.6f}%`."
+            ),
             "",
             "## Dataset integrity",
             "",
@@ -481,9 +595,18 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             "## Interpretation guardrails",
             "",
-            "- Negative or weak returns are recorded, not hidden and not treated as a pipeline failure.",
-            "- The holdout window is sealed; future parameter changes must be judged without tuning to it.",
-            "- Passing this pipeline is necessary but not sufficient; long-term dry-run evidence is still required.",
+            (
+                "- Negative or weak returns are recorded, not hidden and not treated as a pipeline "
+                "failure."
+            ),
+            (
+                "- The holdout window is sealed; future parameter changes must be judged without "
+                "tuning to it."
+            ),
+            (
+                "- Passing this pipeline is necessary but not sufficient; long-term dry-run "
+                "evidence is still required."
+            ),
             "",
         ]
     )
@@ -494,6 +617,8 @@ def execute(freqtrade: str) -> dict[str, Any]:
     protocol = read_json(PROTOCOL_PATH)
     validate_protocol(protocol)
     lock = verify_data_lock(protocol)
+    diagnostics = build_candle_diagnostics(protocol)
+    diagnostics_by_phase = {phase["id"]: phase for phase in diagnostics}
 
     if OUTPUT_ROOT.parent != HERE or OUTPUT_ROOT.name != "output":
         raise PipelineError("Refusing to clean an unexpected output directory")
@@ -549,10 +674,20 @@ def execute(freqtrade: str) -> dict[str, Any]:
             f"{phase['id']}.json",
         ]
         run_command(command, log_dir / f"backtest-{phase['id']}.log")
-        created = sorted(set(backtest_dir.glob("*.zip")) - before, key=lambda path: path.stat().st_mtime)
+        created = sorted(
+            set(backtest_dir.glob("*.zip")) - before,
+            key=lambda path: path.stat().st_mtime,
+        )
         if len(created) != 1:
             raise PipelineError(f"Expected one backtest archive for {phase['id']}, got {created}")
-        backtests.append(summarize_backtest(created[0], protocol["strategy"], phase))
+        backtest_summary = summarize_backtest(created[0], protocol["strategy"], phase)
+        backtests.append(backtest_summary)
+        try:
+            diagnostics_by_phase[phase["id"]]["backtest"] = summarize_backtest_archive(
+                created[0], protocol["strategy"]
+            )
+        except DiagnosticsError as exc:
+            raise PipelineError(f"Backtest diagnostics failed for {phase['id']}: {exc}") from exc
 
     lookahead_spec = protocol["lookahead"]
     lookahead_phase = phase_by_id(protocol, lookahead_spec["phase"])
@@ -614,7 +749,7 @@ def execute(freqtrade: str) -> dict[str, Any]:
     lock_bytes = DATA_LOCK_PATH.read_bytes()
     report = {
         "schema_version": 1,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "status": "passed",
         "freqtrade_version": freqtrade_version,
         "protocol": protocol,
@@ -625,6 +760,7 @@ def execute(freqtrade: str) -> dict[str, Any]:
             "source_run": lock["source"]["source_run"],
         },
         "backtests": backtests,
+        "diagnostics": diagnostics,
         "lookahead": lookahead,
         "recursive": recursive,
     }
