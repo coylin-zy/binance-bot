@@ -1,4 +1,5 @@
 import packageInfo from "../../../../package.json";
+import { binanceConfigurationStatus } from "@/lib/binance/client";
 
 const FT_BASE_URL = process.env.FREQTRADE_URL ?? "http://freqtrade:8080";
 
@@ -28,6 +29,7 @@ export async function GET() {
     dependencies: {
       freqtrade,
       realtime: realtimeConfigured ? "configured" : "missing_configuration",
+      binance_account: binanceConfigurationStatus(),
     },
     latency_ms: Math.round(performance.now() - startedAt),
     timestamp: new Date().toISOString(),
