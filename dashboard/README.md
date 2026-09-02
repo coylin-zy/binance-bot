@@ -15,6 +15,7 @@
 - Docker 健康检查与 `/api/health` 依赖探针
 - 桌面端与移动端响应式终端界面
 - 策略研究页：锁定行情诊断、sealed holdout、dry-run acceptance 和数据血缘
+- 真实 forward dry-run 进度：观察天数、采样完整率、交易样本、重启恢复和机器判定状态
 - 可选 Binance Global 只读账户观测；未配置 Key 时返回 `not_configured`，不影响 dry-run
 - 只读 OpenAI-compatible LLM Gateway：策略复盘/行情摘要/交易解释、预算、重试、熔断和 schema 校验
 - 服务端 decision audit JSONL 记录，自动脱敏并保留输入快照 hash
@@ -28,7 +29,7 @@ Browser
           ├─ allowlisted REST reads
            ├─ pair_candles
            ├─ pause / stop / start
-           ├─ research / baseline
+           ├─ research / baseline + live forward evidence
            ├─ ai / status + read-only review
            └─ audit / recent events
            └─ authenticated SSE

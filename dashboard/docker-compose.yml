@@ -30,8 +30,11 @@ services:
       DOCKER_IMAGE_DIGEST: ${DOCKER_IMAGE_DIGEST:-unknown}
       PROTOCOL_VERSION: ${PROTOCOL_VERSION:-1}
       EXPERIMENT_ID: ${EXPERIMENT_ID:-simplespot-v1-baseline}
+      FORWARD_RUN_PATH: /data/forward-runs/${FORWARD_RUN_ID:-simplespot-v1-forward-v1}
     security_opt:
       - no-new-privileges:true
+    volumes:
+      - ../user_data/forward_runs:/data/forward-runs:ro
     networks:
       - ft-network
 

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import useSWR from "swr";
-import { BrainCircuit, CheckCircle2, Database, GitCommitHorizontal, Info, LockKeyhole, ShieldAlert, Sparkles } from "lucide-react";
+import { Activity, BrainCircuit, CheckCircle2, Database, GitCommitHorizontal, Info, LockKeyhole, ShieldAlert, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PanelError, PanelLoading } from "@/components/dashboard/data-state";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { apiFetcher, postApi } from "@/lib/api";
 import type { BinanceAccountSnapshot } from "@/lib/binance/client";
 import type { LlmResult } from "@/lib/llm/gateway";
 import type { ResearchBaseline } from "@/lib/research/baseline";
+import type { ForwardRunSnapshot } from "@/lib/research/forward";
 import { formatPct, formatUsd } from "@/lib/utils";
 
 interface AuditResponse {
@@ -40,12 +41,14 @@ function Metric({ label, value, tone = "default", note }: { label: string; value
 
 export default function ResearchPage() {
   const baseline = useSWR<ResearchBaseline>("/api/research/baseline", apiFetcher);
+  const forwardRun = useSWR<ForwardRunSnapshot>("/api/research/forward", apiFetcher, { refreshInterval: 60_000 });
   const aiStatus = useSWR<AiStatus>("/api/ai/status", apiFetcher);
   const account = useSWR<BinanceAccountSnapshot>("/api/binance/account", apiFetcher, { refreshInterval: 60_000 });
   const audit = useSWR<AuditResponse>("/api/audit?limit=20", apiFetcher);
   const [review, setReview] = useState<LlmResult | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const data = baseline.data;
+  const forward = forwardRun.data;
 
   const holdoutRows = useMemo(() => data?.diagnostics.filter((row) => row.role === "holdout") ?? [], [data]);
 
@@ -98,6 +101,27 @@ export default function ResearchPage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
+          <section className="terminal-panel overflow-hidden" aria-label="Forward dry-run status">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line-soft)] px-5 py-4">
+              <div><div className="terminal-label text-[var(--terminal)]">Live forward evidence</div><h2 className="mt-1 font-display text-sm font-bold">正式 dry-run 观察期</h2></div>
+              <div className={`flex items-center gap-2 border px-3 py-1.5 text-[0.58rem] font-bold ${forward?.status === "passed" ? "border-[rgba(0,255,65,0.35)] text-[var(--terminal)]" : forward?.status === "research_failed" || forward?.status === "unavailable" ? "border-[rgba(255,180,171,0.35)] text-[var(--danger)]" : "border-[rgba(255,209,102,0.35)] text-[var(--warning)]"}`}><Activity size={13} />{forward?.status?.toUpperCase() ?? "SYNCING"}</div>
+            </div>
+            {forward?.configured ? <>
+              <div className="grid gap-px bg-[var(--line-soft)] sm:grid-cols-2 xl:grid-cols-4">
+                <div className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.52rem]">OBSERVATION</div><div className="terminal-value mt-2 text-lg font-bold">{forward.observation_days?.toFixed(2) ?? "—"} / {forward.minimum_observation_days ?? "—"}D</div></div>
+                <div className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.52rem]">SAMPLES</div><div className="terminal-value mt-2 text-lg font-bold">{forward.successful_sample_count ?? "—"} / {forward.expected_sample_count ?? "—"}</div></div>
+                <div className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.52rem]">CLOSED TRADES</div><div className="terminal-value mt-2 text-lg font-bold">{forward.trade_count ?? "—"} / {data.acceptance.min_trade_count}</div></div>
+                <div className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.52rem]">UPTIME</div><div className="terminal-value mt-2 text-lg font-bold">{forward.uptime_ratio === null ? "—" : formatPct(forward.uptime_ratio)}</div></div>
+              </div>
+              <div className="h-1 bg-[var(--surface-dim)]"><div className="h-full bg-[var(--terminal)] transition-[width]" style={{ width: `${Math.round((forward.progress_ratio ?? 0) * 100)}%` }} /></div>
+              <div className="grid gap-3 p-5 text-[0.64rem] sm:grid-cols-2">
+                <div className="flex items-center gap-2"><CheckCircle2 size={14} className={forward.restart_recovery ? "text-[var(--terminal)]" : "text-[var(--muted)]"} />重启恢复：{forward.restart_recovery ? "已验证" : "待验证"}</div>
+                <div className="flex items-center gap-2"><CheckCircle2 size={14} className={forward.data_integrity ? "text-[var(--terminal)]" : "text-[var(--danger)]"} />数据完整性：{forward.data_integrity ? "通过" : "异常"}</div>
+                <div className="text-[var(--muted)] sm:col-span-2">RUN · {forward.run_id ?? "unknown"} · 更新于 {forward.updated_at ? new Date(forward.updated_at).toLocaleString("zh-CN") : "—"}</div>
+              </div>
+            </> : <div className="p-5 text-[0.67rem] leading-5 text-[var(--muted)]">{forward?.status === "unavailable" ? "采集证据暂不可读；机器人继续 dry-run，但本次研究门禁不会被判为通过。" : "尚未挂载 forward-run 证据目录。静态研究与机器人运行不受影响。"}</div>}
+          </section>
+
           <section className="terminal-panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--line-soft)] px-5 py-4"><div><div className="terminal-label text-[var(--terminal)]">Signal diagnostics</div><h2 className="mt-1 font-display text-sm font-bold">信号稀疏度与前瞻路径</h2></div><Database size={18} className="text-[var(--terminal)]" /></div>
             <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[800px] text-left text-xs"><thead className="border-b border-[var(--line-soft)] bg-[var(--surface-dim)]"><tr>{["WINDOW / PAIR", "RSI >30", "EMA FILTERED", "ENTRIES", "24H NET", "MFE", "MAE"].map((head) => <th key={head} className="terminal-label px-4 py-3 text-[0.56rem]">{head}</th>)}</tr></thead><tbody>{data.diagnostics.map((row) => <tr key={`${row.role}-${row.pair}`} className="border-b border-[var(--line-soft)] last:border-0 hover:bg-[rgba(0,255,65,0.025)]"><td className="px-4 py-3 font-bold">{row.window}<div className="mt-1 text-[0.58rem] font-normal text-[var(--muted)]">{row.pair}</div></td><td className="terminal-value px-4 py-3">{row.rsi_crosses}</td><td className="terminal-value px-4 py-3">{row.ema_filtered}</td><td className="terminal-value px-4 py-3 font-bold">{row.entries}</td><td className={`terminal-value px-4 py-3 font-bold ${(row.forward_24h_net_mean ?? 0) >= 0 ? "profit-pos" : "profit-neg"}`}>{pct(row.forward_24h_net_mean)}</td><td className="terminal-value px-4 py-3 text-[var(--terminal)]">{pct(row.mfe_24h)}</td><td className="terminal-value px-4 py-3 text-[var(--danger)]">{pct(row.mae_24h)}</td></tr>)}</tbody></table></div>
@@ -111,7 +135,7 @@ export default function ResearchPage() {
 
           <section className="terminal-panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--line-soft)] px-5 py-4"><div><div className="terminal-label text-[var(--terminal)]">Forward gate</div><h2 className="mt-1 font-display text-sm font-bold">Dry-run acceptance v1</h2></div><ShieldAlert size={18} className="text-[var(--warning)]" /></div>
-            <div className="grid gap-px bg-[var(--line-soft)] sm:grid-cols-2">{[["最低交易样本", `${data.acceptance.min_trade_count}`], ["最低 Profit Factor", data.acceptance.min_profit_factor.toFixed(2)], ["最大回撤", formatPct(data.acceptance.max_drawdown_ratio)], ["最低费后净收益", formatPct(data.acceptance.min_net_return_ratio)], ["信号差异上限", formatPct(data.acceptance.max_signal_divergence_ratio)], ["最小在线率", formatPct(data.acceptance.min_uptime_ratio)]].map(([label, value]) => <div key={label} className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.54rem]">{label}</div><div className="terminal-value mt-2 text-sm font-bold">{value}</div></div>)}</div>
+            <div className="grid gap-px bg-[var(--line-soft)] sm:grid-cols-2">{[["最低观察周期", `${data.acceptance.min_observation_days} 天`], ["最低交易样本", `${data.acceptance.min_trade_count}`], ["最低 Profit Factor", data.acceptance.min_profit_factor.toFixed(2)], ["最大回撤", formatPct(data.acceptance.max_drawdown_ratio)], ["最低费后净收益", formatPct(data.acceptance.min_net_return_ratio)], ["信号差异上限", formatPct(data.acceptance.max_signal_divergence_ratio)], ["最小在线率", formatPct(data.acceptance.min_uptime_ratio)], ["API 错误上限", formatPct(data.acceptance.max_api_error_ratio)]].map(([label, value]) => <div key={label} className="bg-[var(--surface-low)] p-4"><div className="terminal-label text-[0.54rem]">{label}</div><div className="terminal-value mt-2 text-sm font-bold">{value}</div></div>)}</div>
             <div className="border-t border-[var(--line-soft)] px-5 py-4 text-[0.65rem] leading-5 text-[var(--muted)]"><Info size={14} className="mr-2 inline text-[var(--warning)]" />标准已冻结。通过只代表 forward-test 满足研究门槛，不代表实盘授权。</div>
           </section>
         </div>

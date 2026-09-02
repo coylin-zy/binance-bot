@@ -57,3 +57,16 @@
 - [ ] HTTPS、登录、所有页面、SSE 和健康探针在线复验通过
 - [ ] Freqtrade API 从公网不可直接访问
 - [ ] 回滚命令和上一可用镜像/提交已记录
+
+## 7. 2026-09-02 deployment evidence
+
+- Local: TypeScript、Vitest 33/33、production build、Playwright desktop/mobile 6/6 passed.
+- Server: `ft-dashboard` and `freqtrade` healthy; authenticated REST, SSE and
+  `RUNNING → PAUSED → RUNNING` passed over public HTTPS.
+- Security: unauthenticated research endpoints returned `401`; forbidden force-entry
+  returned `403`; HSTS, CSP, clickjacking and MIME-sniffing headers are present.
+- Forward run: `simplespot-v1-forward-v1` is collecting every five minutes with a
+  frozen 30-day gate. Restart recovery and data integrity evidence passed. This is
+  not a strategy or real-money approval.
+- Rollback: server branches and timestamped database/Nginx backups were retained;
+  unrelated containers were not restarted.
