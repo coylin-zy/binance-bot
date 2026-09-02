@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_dir="${FORWARD_REPO_DIR:-/home/ubuntu/binance-bot}"
-run_id="${FORWARD_RUN_ID:?FORWARD_RUN_ID is required}"
+run_id="${FORWARD_RUN_ID:-simplespot-v1-forward-v1}"
 interval_seconds="${FORWARD_SAMPLE_INTERVAL_SECONDS:-300}"
 run_dir="/freqtrade/user_data/forward_runs/${run_id}"
 
