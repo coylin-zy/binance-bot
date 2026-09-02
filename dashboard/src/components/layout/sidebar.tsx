@@ -9,6 +9,7 @@ import {
   Command,
   History,
   LayoutDashboard,
+  Microscope,
   ShieldCheck,
   SquareTerminal,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/chart", label: "实时图表", code: "02", icon: ChartCandlestick },
   { href: "/trades", label: "交易历史", code: "03", icon: History },
   { href: "/settings", label: "运行控制", code: "04", icon: Command },
+  { href: "/research", label: "策略研究", code: "05", icon: Microscope },
 ];
 
 export function Sidebar() {
@@ -80,7 +82,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--line)] bg-[rgba(14,14,14,0.97)] pb-[max(env(safe-area-inset-bottom),6px)] md:hidden" aria-label="移动端主导航">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-[var(--line)] bg-[rgba(14,14,14,0.97)] pb-[max(env(safe-area-inset-bottom),6px)] md:hidden" aria-label="移动端主导航">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (

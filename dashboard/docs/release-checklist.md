@@ -25,11 +25,16 @@
 - [ ] 浏览器存储中没有 Freqtrade token 或凭据
 - [ ] CSP、点击劫持防护、MIME 嗅探防护与权限策略存在
 - [ ] 登录限流能锁定并在冷却后恢复
+- [ ] Binance 只读 Key 和 LLM Key 仅由服务端读取，客户端 bundle 与日志中不存在凭据
+- [ ] `account_read`、LLM 和审计端点未认证时返回 `401`，LLM 不存在订单执行路径
 
 ## 4. Product behavior
 
 - [ ] 登录、退出和会话过期回收正常
-- [ ] 总览、图表、历史和运行控制四个页面正常
+- [ ] 总览、图表、历史、运行控制和策略研究五个页面正常
+- [ ] Research 页能展示 locked diagnostics、sealed holdout、acceptance、lineage 和审计状态
+- [ ] Binance 未配置时显示 `NOT_CONFIGURED` 且不影响公共行情或 dry-run
+- [ ] LLM 未配置、超时、429、预算耗尽和非法 schema 均降级为只读状态
 - [ ] K 线使用运行策略周期并可在新事件后刷新
 - [ ] SSE 在线、断线降级和恢复状态正确
 - [ ] `RUNNING → PAUSED → RUNNING` 可逆冒烟测试通过
