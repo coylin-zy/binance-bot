@@ -12,7 +12,7 @@ if [[ "$resolved_repo" != "/home/ubuntu/binance-bot" ]]; then
   exit 1
 fi
 
-git_sha="$(git -C "$resolved_repo" rev-parse HEAD)"
+git_sha="$(git -c safe.directory="$resolved_repo" -C "$resolved_repo" rev-parse HEAD)"
 strategy_sha="$(sha256sum "$resolved_repo/user_data/strategies/SimpleSpot.py" | awk '{print $1}')"
 image_digest="$(docker inspect --format '{{.Image}}' freqtrade)"
 freqtrade_version="$(docker exec freqtrade freqtrade --version | awk 'NR == 1 {print $2}')"
