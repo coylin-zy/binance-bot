@@ -37,6 +37,7 @@ test("authentication and server-side security boundaries", async ({ page, reques
   expect(unauthenticatedEvents.status()).toBe(401);
   const protectedEndpoints = [
     ["GET", "/api/research/baseline"],
+    ["GET", "/api/research/forward"],
     ["GET", "/api/ai/status"],
     ["GET", "/api/audit"],
     ["GET", "/api/binance/account"],

@@ -14,6 +14,7 @@ export interface DiagnosticRow {
 }
 
 export interface AcceptanceCriteria {
+  min_observation_days: number;
   min_trade_count: number;
   min_profit_factor: number;
   max_drawdown_ratio: number;
@@ -59,6 +60,7 @@ const diagnostics: DiagnosticRow[] = [
 ];
 
 const acceptance: AcceptanceCriteria = {
+  min_observation_days: 30,
   min_trade_count: 30,
   min_profit_factor: 1.05,
   max_drawdown_ratio: 0.1,
