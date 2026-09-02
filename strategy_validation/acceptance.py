@@ -21,6 +21,7 @@ class AcceptanceError(ValueError):
 
 
 CRITERIA_FIELDS = {
+    "min_observation_days": (int, float),
     "min_trade_count": int,
     "min_profit_factor": (int, float),
     "max_drawdown_ratio": (int, float),
@@ -124,6 +125,7 @@ def evaluate(metrics: dict[str, Any], criteria_document: dict[str, Any]) -> dict
             CriterionResult(label, passed, observed, expected, f"{key} must be <= {expected}")
         )
 
+    minimum("observation_days", "min_observation_days")
     minimum("trade_count", "min_trade_count")
     minimum("profit_factor", "min_profit_factor")
     minimum("net_return_ratio", "min_net_return_ratio")

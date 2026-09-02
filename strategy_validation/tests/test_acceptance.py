@@ -12,6 +12,7 @@ def criteria_document() -> dict:
         "version": "test-v1",
         "status": "frozen",
         "criteria": {
+            "min_observation_days": 30,
             "min_trade_count": 2,
             "min_profit_factor": 1.05,
             "max_drawdown_ratio": 0.1,
@@ -31,6 +32,7 @@ def criteria_document() -> dict:
 def metrics(**overrides: object) -> dict:
     values: dict[str, object] = {
         "schema_version": 1,
+        "observation_days": 31,
         "trade_count": 2,
         "profit_factor": 1.2,
         "net_return_ratio": 0.03,
