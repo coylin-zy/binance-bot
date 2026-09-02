@@ -82,6 +82,8 @@ try {
     FREQTRADE_URL: "http://127.0.0.1:18080",
     FREQTRADE_WS_TOKEN: "qa-websocket-token",
     FREQTRADE_TIMEOUT_MS: "3000",
+    GIT_SHA: "a".repeat(40),
+    STRATEGY_SHA: "b".repeat(64),
   });
   await waitForUrl("http://127.0.0.1:3100/login", dashboard);
 

@@ -100,7 +100,7 @@ export default function ResearchPage() {
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <section className="terminal-panel overflow-hidden" aria-label="Forward dry-run status">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line-soft)] px-5 py-4">
               <div><div className="terminal-label text-[var(--terminal)]">Live forward evidence</div><h2 className="mt-1 font-display text-sm font-bold">正式 dry-run 观察期</h2></div>
@@ -140,7 +140,7 @@ export default function ResearchPage() {
           </section>
         </div>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           <section className="terminal-panel overflow-hidden">
             <div className="border-b border-[var(--line-soft)] px-5 py-4"><div className="terminal-label text-[var(--terminal)]">Read-only AI gateway</div><h2 className="mt-1 font-display text-sm font-bold">策略复盘</h2></div>
             <div className="p-5"><div className="flex items-start gap-3"><BrainCircuit size={20} className="mt-0.5 text-[var(--terminal)]" /><div className="min-w-0 flex-1"><div className="terminal-label text-[0.55rem]">PROVIDER STATUS</div><div className="mt-1 text-sm font-bold">{aiStatus.data?.status === "configured" ? "CONFIGURED" : "NOT_CONFIGURED"}</div><div className="mt-1 text-[0.62rem] text-[var(--muted)]">{aiStatus.data?.provider ?? "none"}{aiStatus.data?.model ? ` · ${aiStatus.data.model}` : ""}</div></div></div><p className="mt-4 text-[0.67rem] leading-5 text-[var(--text-soft)]">只允许生成研究总结、证据和风险标签；响应不会写入策略，也不能触发订单。</p><Button className="mt-5 w-full" variant="outline" onClick={() => void generateReview()} disabled={reviewing || aiStatus.data?.status !== "configured"}><Sparkles size={15} />{reviewing ? "正在生成复盘" : "生成只读策略复盘"}</Button>{aiStatus.data?.status !== "configured" && <div className="mt-3 border border-[rgba(255,209,102,0.28)] bg-[rgba(255,209,102,0.04)] p-3 text-[0.62rem] leading-5 text-[var(--warning)]">LLM 未配置。设置服务端 `LLM_PROVIDER`、`LLM_API_KEY` 和 `LLM_MODEL` 后才会启用。</div>}{review && <div className="mt-5 border-t border-[var(--line-soft)] pt-4" role="status"><div className="terminal-label text-[0.54rem]">RESULT · {review.status.toUpperCase()}</div>{review.output ? <><p className="mt-2 text-xs leading-5 text-[var(--text-soft)]">{review.output.summary}</p><div className="mt-3 flex flex-wrap gap-2">{review.output.risk_flags.map((flag) => <span key={flag} className="border border-[rgba(255,209,102,0.28)] px-2 py-1 text-[0.56rem] text-[var(--warning)]">{flag}</span>)}</div></> : <p className="mt-2 text-[0.65rem] leading-5 text-[var(--muted)]">当前没有可用的模型响应，机器人和研究数据不受影响。</p>}</div>}</div>
@@ -148,7 +148,7 @@ export default function ResearchPage() {
 
           <section className="terminal-panel overflow-hidden">
             <div className="border-b border-[var(--line-soft)] px-5 py-4"><div className="terminal-label text-[var(--terminal)]">Data lineage</div><h2 className="mt-1 font-display text-sm font-bold">证据来源</h2></div>
-            <dl className="divide-y divide-[var(--line-soft)] px-5">{[[GitCommitHorizontal, "GIT SHA", data.lineage.git_sha], [GitCommitHorizontal, "STRATEGY SHA", data.lineage.strategy_sha], [Database, "EXPERIMENT", data.lineage.experiment_id], [LockKeyhole, "PROTOCOL", data.lineage.protocol_version]].map(([Icon, label, value]) => <div key={String(label)} className="flex gap-3 py-4"><Icon size={15} className="mt-0.5 shrink-0 text-[var(--muted)]" /><div className="min-w-0"><dt className="terminal-label text-[0.52rem]">{String(label)}</dt><dd className="mt-1 truncate font-mono text-[0.62rem] text-[var(--text-soft)]">{String(value)}</dd></div></div>)}</dl>
+            <dl className="divide-y divide-[var(--line-soft)] px-5">{[[GitCommitHorizontal, "GIT SHA", data.lineage.git_sha], [GitCommitHorizontal, "STRATEGY SHA", data.lineage.strategy_sha], [Database, "EXPERIMENT", data.lineage.experiment_id], [LockKeyhole, "PROTOCOL", data.lineage.protocol_version]].map(([Icon, label, value]) => <div key={String(label)} className="flex gap-3 py-4"><Icon size={15} className="mt-0.5 shrink-0 text-[var(--muted)]" /><div className="min-w-0 flex-1"><dt className="terminal-label text-[0.52rem]">{String(label)}</dt><dd className="mt-1 truncate font-mono text-[0.62rem] text-[var(--text-soft)]">{String(value)}</dd></div></div>)}</dl>
           </section>
 
           <section className="terminal-panel overflow-hidden">
