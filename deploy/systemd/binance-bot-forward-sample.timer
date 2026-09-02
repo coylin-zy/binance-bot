@@ -1,0 +1,12 @@
+[Unit]
+Description=Collect Binance Bot forward dry-run evidence every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=15s
+Persistent=true
+Unit=binance-bot-forward-sample.service
+
+[Install]
+WantedBy=timers.target

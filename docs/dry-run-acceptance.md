@@ -11,6 +11,7 @@ and remains useful evidence; it must not be relabeled after the fact.
 
 | Metric | Frozen gate |
 | --- | ---: |
+| Minimum observation period | 30 days |
 | Minimum closed trades | 30 |
 | Minimum profit factor | 1.05 |
 | Minimum net return after fees | 0% |
@@ -30,6 +31,7 @@ fields:
 ```json
 {
   "schema_version": 1,
+  "observation_days": 31,
   "trade_count": 30,
   "profit_factor": 1.2,
   "net_return_ratio": 0.03,
@@ -54,3 +56,9 @@ python strategy_validation/acceptance.py forward-metrics.json
 Exit code `0` means every frozen gate passed. Exit code `2` means the run was
 evaluated and failed one or more research gates. Invalid criteria or malformed
 metrics exit with `1`.
+
+Production observations are written below the ignored
+`user_data/forward_runs/<run-id>/` directory by
+`binance-bot-forward-sample.timer`. Each manifest freezes runtime lineage and the
+SHA-256 of these criteria before the first sample. Missing timer slots count against
+uptime, and credentials are never copied into the evidence files.

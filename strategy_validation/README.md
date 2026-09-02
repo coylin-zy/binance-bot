@@ -47,6 +47,27 @@ python strategy_validation/diagnostics.py \
 Generated JSON, Markdown, raw backtest archives, and analysis logs are written beneath
 `strategy_validation/output/` and are uploaded by GitHub Actions.
 
+## Forward dry-run evidence
+
+`forward_run.py` starts a credential-free evidence directory, samples the real
+Freqtrade dry-run API, derives trade/uptime/fill metrics, and applies the frozen
+acceptance gates. Runtime credentials are read from `config.binance.json` for the
+request only and are never persisted in the evidence directory.
+
+The production timer invokes the same command every five minutes. A report stays
+`collecting` for the frozen 30-day observation period. At the end of the period,
+replay the captured candles to record the signal audit, then request a final verdict:
+
+```bash
+python -m strategy_validation.forward_run report \
+  --run-dir user_data/forward_runs/<run-id> \
+  --criteria strategy_validation/dry-run-acceptance.json \
+  --final
+```
+
+Exit code `2` is an evidence-backed `research_failed` verdict, not an operational
+error and never an invitation to change the frozen criteria after seeing results.
+
 The holdout period must not be used to tune RSI, EMA, ROI, stoploss, trailing-stop, or
 future protection parameters. Any dataset refresh must happen in a dedicated reviewable
 change that regenerates `dataset-lock.json`.

@@ -5,6 +5,7 @@
   "scope": "SimpleSpot / Binance global spot / fixed BTC-ETH-XRP universe",
   "effective_before": "The first forward-test observation",
   "criteria": {
+    "min_observation_days": 30,
     "min_trade_count": 30,
     "min_profit_factor": 1.05,
     "max_drawdown_ratio": 0.1,

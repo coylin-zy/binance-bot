@@ -1,0 +1,18 @@
+[Unit]
+Description=Sample Binance Bot forward dry-run evidence
+Requires=docker.service
+After=docker.service network-online.target
+ConditionPathExists=/home/ubuntu/binance-bot/user_data/config.binance.json
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=/home/ubuntu/.config/binance-bot/forward-run.env
+WorkingDirectory=/home/ubuntu/binance-bot
+ExecStart=/bin/bash /home/ubuntu/binance-bot/deploy/scripts/forward-sample.sh
+TimeoutStartSec=120
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
