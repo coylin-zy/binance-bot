@@ -14,6 +14,10 @@
 - 自定义加载、空数据、错误和 404 状态
 - Docker 健康检查与 `/api/health` 依赖探针
 - 桌面端与移动端响应式终端界面
+- 策略研究页：锁定行情诊断、sealed holdout、dry-run acceptance 和数据血缘
+- 可选 Binance Global 只读账户观测；未配置 Key 时返回 `not_configured`，不影响 dry-run
+- 只读 OpenAI-compatible LLM Gateway：策略复盘/行情摘要/交易解释、预算、重试、熔断和 schema 校验
+- 服务端 decision audit JSONL 记录，自动脱敏并保留输入快照 hash
 
 ## 安全边界
 
@@ -22,15 +26,21 @@ Browser
   └─ HTTPS / same-origin
       └─ Next.js BFF
           ├─ allowlisted REST reads
-          ├─ pair_candles
-          ├─ pause / stop / start
-          └─ authenticated SSE
+           ├─ pair_candles
+           ├─ pause / stop / start
+           ├─ research / baseline
+           ├─ ai / status + read-only review
+           └─ audit / recent events
+           └─ authenticated SSE
               └─ private Freqtrade API + WebSocket
 ```
 
 - Freqtrade API 不应直接暴露到公网。
 - BFF 明确阻断 `forceenter`、`forceexit`、交易删除和 `reload_config`。
 - 不提供手动买入、卖出或强平入口。
+- Binance 私有账户只读能力是可选观测项，不是 Freqtrade dry-run 的依赖。
+- LLM 只生成解释和风险标签；模型不可用、超时或预算耗尽时，规则策略继续运行。
+- 审计日志只记录脱敏 payload、lineage 字段和 `input_snapshot_hash`，不写入 API Key 或完整凭据。
 - `.env.local`、访问令牌、Cookie 和截图测试产物均被 Git 忽略。
 - 生产环境必须通过 HTTPS 反向代理访问。
 
@@ -45,6 +55,11 @@ npm run dev
 ```
 
 在 `.env.local` 中设置实际的 `FREQTRADE_WS_TOKEN`，不要提交该文件。默认页面地址为 `http://localhost:3000`。
+
+需要启用只读 Binance 或 LLM 时，只在服务端环境设置 `.env.local` 中对应变量；参照
+`.env.example` 的 `BINANCE_*`、`LLM_*` 和 `AUDIT_LOG_PATH`。这些值不会进入浏览器
+bundle。LLM 首版只支持研究型 OpenAI-compatible `chat/completions` 响应，且必须返回约定
+JSON schema。
 
 ## 验证
 

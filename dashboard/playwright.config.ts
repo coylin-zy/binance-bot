@@ -18,28 +18,6 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  webServer: [
-    {
-      command: "npm run qa:mock",
-      url: "http://127.0.0.1:18080/api/v1/show_config",
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
-    {
-      command: "npm run start",
-      url: `${dashboardUrl}/login`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-      env: {
-        ...process.env,
-        HOSTNAME: "127.0.0.1",
-        PORT: String(dashboardPort),
-        FREQTRADE_URL: "http://127.0.0.1:18080",
-        FREQTRADE_WS_TOKEN: "qa-websocket-token",
-        FREQTRADE_TIMEOUT_MS: "3000",
-      },
-    },
-  ],
   projects: [
     {
       name: "desktop-chromium",

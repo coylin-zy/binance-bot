@@ -5,6 +5,7 @@ const routes = [
   ["/chart", "市场遥测与策略标记", "READY"],
   ["/trades", "收益分析与执行记录", "EXECUTIONS"],
   ["/settings", "运行控制与安全配置", "BOT_RUNNING"],
+  ["/research", "策略研究终端", "RESEARCH_ONLY"],
 ] as const;
 
 function watchRuntimeErrors(page: Page) {
@@ -34,6 +35,20 @@ test("authentication and server-side security boundaries", async ({ page, reques
   expect(unauthenticatedBff.status()).toBe(401);
   const unauthenticatedEvents = await request.get("/api/events");
   expect(unauthenticatedEvents.status()).toBe(401);
+  const protectedEndpoints = [
+    ["GET", "/api/research/baseline"],
+    ["GET", "/api/ai/status"],
+    ["GET", "/api/audit"],
+    ["GET", "/api/binance/account"],
+    ["POST", "/api/ai/review"],
+    ["POST", "/api/audit/decision"],
+  ] as const;
+  for (const [method, path] of protectedEndpoints) {
+    const response = method === "GET"
+      ? await request.get(path)
+      : await request.post(path, { data: {} });
+    expect(response.status(), `${method} ${path} should require auth`).toBe(401);
+  }
 
   const loginResponse = await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
@@ -41,6 +56,44 @@ test("authentication and server-side security boundaries", async ({ page, reques
   expect(loginResponse?.headers()["x-frame-options"]).toBe("DENY");
 
   await authenticate(page);
+
+  const aiStatus = await page.evaluate(async () => {
+    const response = await fetch("/api/ai/status", { credentials: "same-origin" });
+    return { status: response.status, body: await response.json() };
+  });
+  expect(aiStatus.status).toBe(200);
+  expect(aiStatus.body).toMatchObject({ read_only: true, status: "not_configured" });
+
+  const review = await page.evaluate(async () => {
+    const response = await fetch("/api/ai/review", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        task: "strategy_review",
+        prompt_version: "strategy-review-v1",
+        context: { strategy: "SimpleSpot", api_secret: "must-not-be-stored" },
+      }),
+    });
+    return { status: response.status, body: await response.json() };
+  });
+  expect(review.status).toBe(200);
+  expect(review.body).toMatchObject({ status: "not_configured", output: null });
+
+  const auditEvent = await page.evaluate(async () => {
+    const response = await fetch("/api/audit/decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        event_type: "risk_check",
+        payload: { allowed: true, nested: { api_token: "must-not-be-stored" } },
+      }),
+    });
+    return { status: response.status, body: await response.json() };
+  });
+  expect(auditEvent.status).toBe(200);
+  expect(auditEvent.body.status).toBe("recorded");
 
   const cookies = await page.context().cookies();
   for (const name of ["ft_access", "ft_refresh", "ft_user"]) {
